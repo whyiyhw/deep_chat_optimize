@@ -7,6 +7,7 @@
 
 ![预览图](./doc/example1.png)
 ![预览图](./doc/example2.png)
+![预览图](./doc/example7.png)
 
 
 ## 支持的网站
@@ -46,7 +47,7 @@
 - 支持多种格式导出（JSON、Markdown）
 - 一键导出当前会话
 - 批量导出历史会话
-- 图像导出功能
+- 图像导出功能 支持 svg 的 图像导出
 
 
 > 开发相关内容已移至 [开发指南](./doc/develop.md)

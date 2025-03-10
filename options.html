@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deep Chat Optimize - 选项</title>
+  <style>
+    body {
+      font-family: 'Microsoft YaHei', Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    h1 {
+      color: #4D6BFE;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+    
+    .section {
+      margin-bottom: 30px;
+    }
+    
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 15px;
+    }
+    
+    .option {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    
+    .option label {
+      margin-left: 10px;
+      flex: 1;
+    }
+    
+    .button {
+      background-color: #4D6BFE;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.3s;
+    }
+    
+    .button:hover {
+      background-color: #3A56E0;
+    }
+    
+    .button.secondary {
+      background-color: #f5f5f5;
+      color: #333;
+      border: 1px solid #ddd;
+    }
+    
+    .button.secondary:hover {
+      background-color: #e8e8e8;
+    }
+    
+    .button.danger {
+      background-color: #f44336;
+    }
+    
+    .button.danger:hover {
+      background-color: #e53935;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Deep Chat Optimize 设置</h1>
+    
+    <div class="section">
+      <div class="section-title">界面设置</div>
+      <div class="option">
+        <input type="checkbox" id="enable-dark-mode">
+        <label for="enable-dark-mode">深色模式</label>
+      </div>
+      <div class="option">
+        <input type="checkbox" id="enable-markdown" checked>
+        <label for="enable-markdown">Markdown支持</label>
+      </div>
+      <div class="option">
+        <input type="checkbox" id="enable-auto-backup">
+        <label for="enable-auto-backup">自动备份聊天记录</label>
+      </div>
+    </div>
+    
+    <div class="section">
+      <div class="section-title">快捷键设置</div>
+      <div class="option">
+        <label>导出聊天记录:</label>
+        <input type="text" id="shortcut-export" value="Ctrl+Shift+E" readonly>
+      </div>
+      <div class="option">
+        <label>切换主题:</label>
+        <input type="text" id="shortcut-theme" value="Ctrl+Shift+T" readonly>
+      </div>
+    </div>
+    
+    <div class="section">
+      <div class="section-title">数据管理</div>
+      <button id="export-all-data" class="button">导出所有数据</button>
+      <button id="import-data" class="button secondary" style="margin-left: 10px;">导入数据</button>
+      <button id="reset-settings" class="button secondary" style="margin-left: 10px;">重置设置</button>
+      <button id="clear-data" class="button danger" style="margin-left: 10px;">清除所有数据</button>
+    </div>
+  </div>
+  
+  <script type="module" src="./src/options/index.js"></script>
+</body>
+</html> 

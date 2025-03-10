@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deep Chat Optimize</title>
+  <script type="module" src="./src/popup/index.jsx"></script>
+  <style>
+    body {
+      width: 320px;
+      min-height: 300px;
+      margin: 0;
+      padding: 0;
+      font-family: 'Microsoft YaHei', Arial, sans-serif;
+      color: #333;
+    }
+    
+    .container {
+      padding: 16px;
+    }
+    
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .header h1 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    
+    .logo {
+      display: flex;
+      align-items: center;
+    }
+    
+    .logo img {
+      width: 24px;
+      height: 24px;
+      margin-right: 8px;
+    }
+    
+    .theme-switch {
+      position: relative;
+      display: inline-block;
+      width: 40px;
+      height: 20px;
+    }
+    
+    .theme-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 20px;
+    }
+    
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 2px;
+      bottom: 2px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    
+    input:checked + .slider {
+      background-color: #2196F3;
+    }
+    
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+    
+    .section {
+      margin-bottom: 16px;
+    }
+    
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    
+    .action-button {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 8px;
+      background-color: #f5f5f5;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.2s;
+    }
+    
+    .action-button:hover {
+      background-color: #e8e8e8;
+    }
+    
+    .action-button:last-child {
+      margin-bottom: 0;
+    }
+    
+    .action-icon {
+      margin-right: 8px;
+      color: #555;
+    }
+    
+    .footer {
+      margin-top: 16px;
+      padding-top: 8px;
+      border-top: 1px solid #e0e0e0;
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #888;
+    }
+    
+    .footer a {
+      color: #2196F3;
+      text-decoration: none;
+    }
+    
+    .footer a:hover {
+      text-decoration: underline;
+    }
+    
+    /* 暗色主题 */
+    body.dark-theme {
+      background-color: #222;
+      color: #e0e0e0;
+    }
+    
+    body.dark-theme .header {
+      border-bottom-color: #444;
+    }
+    
+    body.dark-theme .action-button {
+      background-color: #333;
+      border-color: #444;
+      color: #e0e0e0;
+    }
+    
+    body.dark-theme .action-button:hover {
+      background-color: #444;
+    }
+    
+    body.dark-theme .footer {
+      border-top-color: #444;
+      color: #aaa;
+    }
+    
+    body.dark-theme .footer a {
+      color: #64b5f6;
+    }
+    
+    /* 语言选择器样式 */
+    .language-selector {
+      position: relative;
+      margin-left: auto;
+      min-width: 80px;
+    }
+    
+    .language-selector select {
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid #e0e0e0;
+      background-color: #f5f5f5;
+      font-size: 12px;
+      color: #333;
+      cursor: pointer;
+      appearance: none;
+      padding-right: 20px;
+      width: 100%;
+    }
+    
+    .language-selector::after {
+      content: "▼";
+      font-size: 10px;
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+      color: #666;
+    }
+    
+    body.dark-theme .language-selector select {
+      background-color: #333;
+      border-color: #444;
+      color: #e0e0e0;
+    }
+    
+    body.dark-theme .language-selector::after {
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">
+        <img src="./public/images/icon48.png" alt="Logo">
+        <h1>Deep Chat Optimize</h1>
+      </div>
+      <div class="language-selector">
+        <select id="language-select">
+          <option value="zh-CN">中文</option>
+          <option value="en-US">English</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="section">
+      <div class="section-title">快捷工具</div>
+      <button class="action-button" id="export-button">
+        <span class="action-icon">📤</span>
+        导出当前聊天
+      </button>
+      <button class="action-button" id="import-button">
+        <span class="action-icon">📥</span>
+        导入聊天记录
+      </button>
+      <button class="action-button" id="search-button">
+        <span class="action-icon">🔍</span>
+        搜索聊天内容
+      </button>
+    </div>
+    
+    <button class="action-button" id="settings-button">
+      <span class="action-icon">⚙️</span>
+      高级设置
+    </button>
+    
+    <div class="footer">
+      <span>v1.0.0</span>
+      <a href="#" id="help-link">帮助</a>
+    </div>
+  </div>
+</body>
+</html> 

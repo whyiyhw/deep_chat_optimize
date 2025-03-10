@@ -1,0 +1,223 @@
+/**
+ * Deep Chat Optimize 内容样式
+ * 用于注入到AI聊天页面的样式
+ */
+
+/* 工具栏样式 */
+.dco-toolbar {
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  border-bottom: 1px solid var(--dco-border-color, #e0e0e0);
+  background-color: var(--dco-bg-color, white);
+  z-index: 1000;
+}
+
+.dco-button {
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--dco-border-color, #ccc);
+  background-color: var(--dco-bg-color, #f5f5f5);
+  color: var(--dco-text-color, #333);
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.dco-button:hover {
+  background-color: #e8e8e8;
+}
+
+/* 代码高亮样式 */
+.dco-highlighted {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  padding: 0.5em;
+  line-height: 1.5;
+  overflow-x: auto;
+}
+
+.dco-code-header {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5em;
+  background-color: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-bottom: none;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+}
+
+.dco-copy-button {
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0 0.5em;
+}
+
+.dco-copy-button:hover {
+  color: var(--dco-accent-color, #0078d7);
+}
+
+/* 搜索框样式 */
+.dco-search-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: var(--dco-bg-color, white);
+  border: 1px solid var(--dco-border-color, #ccc);
+  border-radius: 4px;
+  padding: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1001;
+  width: 300px;
+}
+
+.dco-search-input {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--dco-border-color, #ccc);
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.dco-search-results {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.dco-search-result-item {
+  padding: 8px;
+  border-bottom: 1px solid var(--dco-border-color, #eee);
+  cursor: pointer;
+}
+
+.dco-search-result-item:hover {
+  background-color: #f0f0f0;
+}
+
+.dco-search-highlight {
+  background-color: yellow;
+  color: black;
+}
+
+/* 暗色主题样式 */
+.dco-theme-dark {
+  --dco-bg-color: #1e1e1e;
+  --dco-text-color: #e0e0e0;
+  --dco-border-color: #444;
+  --dco-accent-color: #0078d7;
+}
+
+.dco-theme-dark .dco-toolbar {
+  background-color: #2d2d2d;
+  border-color: #444;
+}
+
+.dco-theme-dark .dco-button {
+  background-color: #3d3d3d;
+  color: #e0e0e0;
+  border-color: #555;
+}
+
+.dco-theme-dark .dco-button:hover {
+  background-color: #4d4d4d;
+}
+
+.dco-theme-dark .dco-code-header {
+  background-color: #2d2d2d;
+  border-color: #444;
+}
+
+.dco-theme-dark .dco-search-container {
+  background-color: #2d2d2d;
+  border-color: #444;
+}
+
+.dco-theme-dark .dco-search-input {
+  background-color: #3d3d3d;
+  color: #e0e0e0;
+  border-color: #555;
+}
+
+.dco-theme-dark .dco-search-result-item {
+  border-color: #444;
+}
+
+.dco-theme-dark .dco-search-result-item:hover {
+  background-color: #3d3d3d;
+}
+
+/* DeepSeek界面特定修复 */
+/* 修复按钮区域中的排列问题 */
+.ec4f5d61 {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+}
+
+/* 确保提示词按钮在联网搜索按钮后面 */
+.ec4f5d61 .ds-button:nth-of-type(2) + #dco-prompt-button-input,
+.ec4f5d61 div:nth-of-type(3):not(.ds-button) + #dco-prompt-button-input {
+  order: 3 !important;
+}
+
+/* 确保文件上传区域在提示词按钮后面 */
+.ec4f5d61 .bf38813a {
+  order: 4 !important;
+}
+
+/* 确保按钮内容正确对齐 */
+#dco-prompt-button-input {
+  display: flex !important;
+  align-items: center !important;
+  margin-right: 8px !important;
+}
+
+/* 针对中文界面的特殊修复 */
+.ec4f5d61 .ds-button {
+  margin-bottom: 8px !important;
+}
+
+/* 修复在中文界面下的按钮排列 */
+@media screen and (max-width: 600px) {
+  .ec4f5d61 {
+    flex-direction: column !important;
+  }
+}
+
+/* 添加中文界面下的提示信息 */
+.dco-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: #fff;
+  border: 1px solid #e0e0e0;
+  border-left: 4px solid #4d6bfe;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 12px 16px;
+  z-index: 10000;
+  max-width: 300px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.dco-notification.success {
+  border-left-color: #4caf50;
+}
+
+.dco-notification.error {
+  border-left-color: #f44336;
+}
+
+.dco-notification.info {
+  border-left-color: #2196f3;
+}
+
+.dco-theme-dark .dco-notification {
+  background-color: #2d2d2d;
+  color: #e0e0e0;
+  border-color: #444;
+} 

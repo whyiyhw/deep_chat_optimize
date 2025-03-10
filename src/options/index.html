@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deep Chat Optimize - 设置</title>
+  <style>
+    body {
+      font-family: 'Microsoft YaHei', Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      color: #333;
+      background-color: #f5f5f5;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .header h1 {
+      margin: 0;
+      display: flex;
+      align-items: center;
+    }
+    
+    .header h1 img {
+      width: 32px;
+      height: 32px;
+      margin-right: 10px;
+    }
+    
+    .theme-switch {
+      position: relative;
+      display: inline-block;
+      width: 60px;
+      height: 30px;
+    }
+    
+    .theme-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 30px;
+    }
+    
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 22px;
+      width: 22px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    
+    input:checked + .slider {
+      background-color: #2196F3;
+    }
+    
+    input:checked + .slider:before {
+      transform: translateX(30px);
+    }
+    
+    .card {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    
+    .card-header {
+      padding: 15px 20px;
+      background-color: #f9f9f9;
+      border-bottom: 1px solid #e0e0e0;
+      font-weight: 600;
+    }
+    
+    .card-body {
+      padding: 20px;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+    
+    .form-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    
+    .form-row label {
+      margin-bottom: 0;
+    }
+    
+    input[type="text"],
+    select {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    
+    .btn {
+      padding: 8px 16px;
+      background-color: #2196F3;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.2s;
+    }
+    
+    .btn:hover {
+      background-color: #0d8bf2;
+    }
+    
+    .btn-secondary {
+      background-color: #e0e0e0;
+      color: #333;
+    }
+    
+    .btn-secondary:hover {
+      background-color: #d0d0d0;
+    }
+    
+    .actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    
+    .shortcut-input {
+      max-width: 200px;
+      text-align: center;
+    }
+    
+    /* 暗色主题 */
+    body.dark-theme {
+      background-color: #222;
+      color: #e0e0e0;
+    }
+    
+    body.dark-theme .header {
+      border-bottom-color: #444;
+    }
+    
+    body.dark-theme .card {
+      background-color: #333;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+    
+    body.dark-theme .card-header {
+      background-color: #2d2d2d;
+      border-bottom-color: #444;
+    }
+    
+    body.dark-theme input[type="text"],
+    body.dark-theme select {
+      background-color: #444;
+      border-color: #555;
+      color: #e0e0e0;
+    }
+    
+    body.dark-theme .btn-secondary {
+      background-color: #555;
+      color: #e0e0e0;
+    }
+    
+    body.dark-theme .btn-secondary:hover {
+      background-color: #666;
+    }
+    
+    /* 暗色主题下的进度条容器 */
+    body.dark-theme .progress-bar-container {
+      background-color: #444;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>
+        <img src="./images/icon48.png" alt="Logo">
+        Deep Chat Optimize 设置
+      </h1>
+      <div style="display: flex; align-items: center;">
+        <span style="margin-right: 10px;">暗色主题</span>
+        <label class="theme-switch">
+          <input type="checkbox" id="theme-toggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-header">导出设置</div>
+      <div class="card-body">
+        <div class="form-group">
+          <label for="export-format">默认导出格式</label>
+          <select id="export-format">
+            <option value="json">JSON</option>
+            <option value="md">Markdown</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>包含图片</label>
+          <label class="theme-switch" style="width: 50px; height: 25px;">
+            <input type="checkbox" id="include-images-toggle" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="form-row">
+          <label>包含代码块</label>
+          <label class="theme-switch" style="width: 50px; height: 25px;">
+            <input type="checkbox" id="include-code-toggle" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-header">数据管理</div>
+      <div class="card-body">
+        <div class="form-group">
+          <label>存储使用情况</label>
+          <div style="margin-top: 10px;">
+            <div style="margin-bottom: 5px; display: flex; justify-content: space-between;">
+              <span>本地存储 (Local)</span>
+              <span id="local-storage-usage">计算中...</span>
+            </div>
+            <div class="progress-bar-container" style="height: 8px; background-color: #eee; border-radius: 4px; overflow: hidden; margin-bottom: 15px;">
+              <div id="local-progress-bar" style="height: 100%; width: 0%; background-color: #4CAF50; transition: width 0.5s;"></div>
+            </div>
+          </div>
+          
+          <div style="text-align: right; margin-top: 5px;">
+            <button id="refresh-storage" class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;">
+              刷新统计
+            </button>
+          </div>
+        </div>
+        <div class="actions">
+          <button id="export-all-btn" class="btn">导出所有数据</button>
+          <button id="clear-storage-btn" class="btn btn-secondary">清除所有数据</button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="actions">
+      <button id="reset-btn" class="btn btn-secondary">重置设置</button>
+      <button id="save-btn" class="btn">保存设置</button>
+    </div>
+  </div>
+  
+  <script type="module" src="index.js"></script>
+</body>
+</html> 

@@ -541,13 +541,13 @@ const PromptPanel = ({ chatService, onClose }) => {
   
   // 加载提示词模板
   const loadPromptTemplates = () => {
-    chrome.storage.sync.get('promptTemplates', (result) => {
-      const templates = result.promptTemplates || [];
-      
-      // 按更新时间排序，最新的在前面
-      templates.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-      
-      setTemplates(templates);
+    import('../features/promptFeature.js').then(module => {
+      module.loadPromptTemplates().then(templates => {
+        // 按更新时间排序，最新的在前面
+        templates.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+        
+        setTemplates(templates);
+      });
     });
   };
   
@@ -641,21 +641,23 @@ const PromptPanel = ({ chatService, onClose }) => {
     updatedTemplates[templateIndex] = updatedTemplate;
     
     // 保存到存储
-    chrome.storage.sync.set({ promptTemplates: updatedTemplates }, () => {
-      // 更新状态
-      setTemplates(updatedTemplates);
-      
-      // 显示通知
-      const message = updatedTemplate.isFavorite ? t.favoriteAdded : t.favoriteRemoved;
-      showNotification(message, 'success');
-      
-      // 如果当前在收藏标签页并且取消了收藏，可能需要更新UI
-      if (activeTab === 'favorite' && !updatedTemplate.isFavorite) {
-        // 如果当前选中的是被取消收藏的模板，取消选中
-        if (selectedTemplate === templateId) {
-          setSelectedTemplate(null);
+    import('../features/promptFeature.js').then(module => {
+      module.savePromptTemplate(updatedTemplate).then(() => {
+        // 更新状态
+        setTemplates(updatedTemplates);
+        
+        // 显示通知
+        const message = updatedTemplate.isFavorite ? t.favoriteAdded : t.favoriteRemoved;
+        showNotification(message, 'success');
+        
+        // 如果当前在收藏标签页并且取消了收藏，可能需要更新UI
+        if (activeTab === 'favorite' && !updatedTemplate.isFavorite) {
+          // 如果当前选中的是被取消收藏的模板，取消选中
+          if (selectedTemplate === templateId) {
+            setSelectedTemplate(null);
+          }
         }
-      }
+      });
     });
   };
   

@@ -4,7 +4,7 @@
 - 对于浏览器上的 ai chat 的 界面优化，加入额外功能，
 - 对于浏览器上的 chat 数据可以进行 导出 方便用户 进行 本地化的存储 或者进行分享到社交平台。
 
-## 开发环境为 windows 10
+## 开发环境
 - node 版本为 22.14.0
 - pnpm 版本为 9.12.3
 
@@ -50,8 +50,17 @@ deep_chat_optimize/
 │   │   ├── components/         # 内容脚本组件
 │   │   ├── core/               # 核心功能实现
 │   │   ├── features/           # 特性功能实现
+│   │   │   ├── data-extractors.js  # 数据提取器
+│   │   │   ├── export.js           # 导出功能
+│   │   │   ├── export-core.js      # 导出核心功能
+│   │   │   ├── export-ui.js        # 导出UI组件
+│   │   │   ├── image-renderer.js   # 图像渲染
+│   │   │   ├── prompt/             # 提示词相关功能
+│   │   │   ├── promptFeature.js    # 提示词功能
+│   │   │   ├── themeManager.js     # 主题管理
+│   │   │   ├── themes.js           # 主题定义
+│   │   │   └── ui.js               # UI功能
 │   │   ├── utils/              # 内容脚本工具函数
-│   │   ├── styles/             # 内容脚本样式
 │   │   └── index.jsx           # 内容脚本入口
 │   ├── popup/                  # 弹出窗口
 │   │   ├── components/         # 弹出窗口React组件
@@ -73,6 +82,8 @@ deep_chat_optimize/
 ├── convert_icons.js            # 图标转换脚本
 ├── background.js               # 背景脚本
 ├── content.js                  # 内容脚本
+├── popup.html                  # 弹出窗口HTML
+├── options.html                # 选项页HTML
 ├── README.md                   # 项目说明文档
 └── LICENSE                     # 许可证文件
 ```
@@ -85,6 +96,8 @@ deep_chat_optimize/
 - 打包工具：Vite + @crxjs/vite-plugin
 - 包管理：pnpm
 - 样式：CSS-in-JS (styled-components)
+- 图像处理：html2canvas、sharp
+- 文件处理：jszip
 
 ## 支持的网站
 
@@ -126,11 +139,13 @@ deep_chat_optimize/
 - 历史会话管理
 - 提示词（Prompt）模板管理
 - 多模型支持和切换
+- 图像渲染和处理
 
 ### 数据导出
 - 支持多种格式导出（JSON、Markdown）
 - 一键导出当前会话
 - 批量导出历史会话
+- 图像导出功能
 
 ## 开发指南
 
@@ -155,12 +170,16 @@ pnpm run preview
 ```
 
 ### 加载扩展到浏览器
-1. 打开Chrome浏览器
-2. 访问 chrome://extensions/
-3. 开启"开发者模式"
-4. 点击"加载已解压的扩展程序"
-5. 选择项目的 `dist` 目录
+1. pnpm run build 去生成 dist 目录
+2. 打开Chrome浏览器
+3. 访问 chrome://extensions/
+4. 开启"开发者模式"
+5. 点击"加载已解压的扩展程序"
+6. 选择项目的 `dist` 目录
 
+### 多语言支持
+
+项目支持多语言，目前实现了中文和英文两种语言。
 
 #### 添加新翻译
 在 `src/popup/contexts/LanguageContext.jsx` 中的translations对象中添加新的键值对。

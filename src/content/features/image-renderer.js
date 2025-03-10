@@ -368,21 +368,6 @@ export function createImagePreviewModal(htmlData, service) {
             width: 750px !important;
             box-sizing: border-box !important;
           }
-          .xiaohongshu-page {
-            height: auto !important;
-            min-height: 100% !important;
-            overflow: visible !important;
-            padding: 12px !important;
-            width: 750px !important;
-            box-sizing: border-box !important;
-            transform: none !important;
-            max-width: 100% !important;
-            margin: 0 auto !important;
-            background-color: white !important;
-            position: relative !important;
-            z-index: 1 !important;
-            display: block !important;
-          }
           .chat-container {
             overflow: visible !important;
             padding: 12px !important;
@@ -625,7 +610,7 @@ export function createImagePreviewModal(htmlData, service) {
           allowTaint: true,
           useCORS: true,
           logging: false,
-          scale: isXiaohongshuPage ? 3 : 2, // 小红书页面使用更高清的3倍图
+          scale: 2, // 提高缩放比例到3倍以获得更高清晰度
           backgroundColor: '#FFFFFF',
           windowWidth: 750,
           windowHeight: contentHeight,
@@ -634,39 +619,29 @@ export function createImagePreviewModal(htmlData, service) {
           scrollY: 0,
           scrollX: 0,
           removeContainer: true,
-          // 尝试更好的文本渲染
+          // 优化文本渲染
           letterRendering: true,
+          textRendering: 'geometricPrecision', // 使用几何精度文本渲染
+          fontDisplay: 'swap', // 字体加载策略
           useCORS: true,
           allowTaint: true,
-          foreignObjectRendering: isXiaohongshuPage, // 对小红书页面尝试启用foreignObject渲染
-          ignoreElements: (element) => {
-            return element.classList && 
-                  (element.classList.contains('ignore-for-screenshot') || 
-                   element.classList.contains('scroll-indicator'));
-          },
-          // 针对小红书页面的特殊优化
-          imageTimeout: 0, // 不设置图像加载超时
-          onclone: (clonedDoc) => {
-            if (isXiaohongshuPage) {
-              // 确保克隆文档中的小红书页面样式正确
-              const xiaohongshuPages = clonedDoc.querySelectorAll('.xiaohongshu-page');
-              xiaohongshuPages.forEach(page => {
-                page.style.width = '750px';
-                page.style.margin = '0 auto';
-                page.style.boxSizing = 'border-box';
-                page.style.transform = 'none';
-                page.style.maxWidth = '100%';
-                page.style.height = 'auto';
-              });
-            }
-          }
+          foreignObjectRendering: true, // 启用foreignObject渲染以获得更好的文本质量
+          imageTimeout: 0,
+          // 抗锯齿和平滑设置
+          imageSmoothing: true,
+          imageSmoothingEnabled: true,
+          imageSmoothingQuality: 'high',
+          // Canvas上下文属性
+          alpha: true, // 启用alpha通道
+          antialias: true, // 启用抗锯齿
+          willReadFrequently: true // 优化频繁读取
         };
         
         html2canvas(iframeBody, options)
           .then(canvas => {
             // 小红书页面保持原始尺寸
             const finalCanvas = document.createElement('canvas');
-            const originalHeight = canvas.height / options.scale;
+            // const originalHeight = canvas.height / options.scale;
             
             // 设置画布尺寸，保留完整内容
             finalCanvas.width = 750;
@@ -678,7 +653,7 @@ export function createImagePreviewModal(htmlData, service) {
             const ctx = finalCanvas.getContext('2d');
             
             // 填充白色背景
-            ctx.fillStyle = '#FFFFFF';
+            // ctx.fillStyle = '#FFFFFF';
             ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
             
             // 关闭图像平滑以获得更清晰的文字

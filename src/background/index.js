@@ -346,71 +346,22 @@ function convertAllChatsToMarkdown(allChatsData) {
  * @returns {String} - HTML文本
  */
 function convertChatToHTML(chatData) {
-  // 智能分页：考虑消息长度的分页
-  // 估计单条消息的长度，以字符数作为基础计算
-  const estimateMessageLength = (msg) => {
-    let length = msg.content ? msg.content.length : 0;
-    // 代码块消耗更多空间
-    const codeBlockCount = (msg.content.match(/```[\s\S]*?```/g) || []).length;
-    length += codeBlockCount * 200; // 代码块额外加权
-    
-    // 思考内容消耗额外空间
-    if (msg.thinking_content) {
-      length += msg.thinking_content.length * 0.7; // 思考内容权重稍低
-    }
-    
-    return length;
-  };
-  
-  // 目标是每页有合理的内容长度
-  const TARGET_PAGE_LENGTH = 1500; // 每页目标字符数
-  
-  // 分割消息为多个页面
-  let pages = [];
-  let currentPage = [];
-  let currentPageLength = 0;
-  
-  if (chatData.messages && Array.isArray(chatData.messages)) {
-    chatData.messages.forEach((msg, index) => {
-      const msgLength = estimateMessageLength(msg);
-      
-      // 检查当前消息是否会导致页面过长
-      if (currentPageLength > 0 && currentPageLength + msgLength > TARGET_PAGE_LENGTH) {
-        // 如果当前页已有内容且加入新消息会超出目标长度，则创建新页面
-        pages.push([...currentPage]);
-        currentPage = [msg];
-        currentPageLength = msgLength;
-      } else {
-        // 否则添加到当前页面
-        currentPage.push(msg);
-        currentPageLength += msgLength;
-      }
-      
-      // 最后一条消息，确保添加最后一页
-      if (index === chatData.messages.length - 1 && currentPage.length > 0) {
-        pages.push([...currentPage]);
-      }
-    });
+  // 不再进行分页，直接将所有消息传递给 generatePageHTML
+  if (!chatData.messages || !Array.isArray(chatData.messages)) {
+    return [generatePageHTML(chatData, [], 1, 1)];
   }
   
-  // 如果没有内容，创建一个空页面
-  if (pages.length === 0) {
-    pages.push([]);
-  }
+  // 直接生成单个页面的HTML
+  const html = generatePageHTML(chatData, chatData.messages, 1, 1);
   
-  // 生成所有页面的HTML
-  let allPagesHtml = pages.map((pageMessages, pageIndex) => {
-    return generatePageHTML(chatData, pageMessages, pageIndex + 1, pages.length);
-  });
-  
-  // 返回所有页面HTML的数组
-  return allPagesHtml;
+  // 返回包含单个HTML的数组，保持与原函数相同的返回类型
+  return [html];
 }
 
 /**
  * 生成单个页面的HTML
  * @param {Object} chatData - 聊天数据
- * @param {Array} messages - 当前页面的消息数组
+ * @param {Array} messages - 消息数组
  * @param {Number} pageNumber - 当前页码
  * @param {Number} totalPages - 总页数
  * @returns {String} - 页面HTML
@@ -422,9 +373,9 @@ function generatePageHTML(chatData, messages, pageNumber, totalPages) {
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>${chatData.title || '智能对话记录'} (${pageNumber}/${totalPages})</title>
+    <title>${chatData.title || '智能对话记录'}</title>
     <style>
-      /* 全局样式 */
+      /* 全局样式 - Ant Design 风格 */
       * {
         box-sizing: border-box;
         margin: 0;
@@ -432,41 +383,46 @@ function generatePageHTML(chatData, messages, pageNumber, totalPages) {
       }
       
       :root {
-        --primary-color: #FF2442; /* 小红书红色 */
-        --primary-dark: #E30B29; /* 深红色，用于文字 */
-        --secondary-color: #FF6B81; /* 浅红色 */
-        --accent-color: #FF9933; /* 小红书特色橙色 */
-        --accent-dark: #E67E0D; /* 深橙色，用于重要文字 */
-        --accent-light: #FFF4E0; /* 浅橙色背景 */
-        --user-bg: #F0F2F5; /* 调整用户消息背景，提高对比度 */
-        --ai-bg: #FFF0F0; /* 调整AI消息背景，提高对比度 */
-        --user-header: #DFE3E8; /* 用户消息头部背景 */
-        --ai-header: #FFE5E5; /* AI消息头部背景 */
-        --text-primary: #111111; /* 主要文本色，加深至接近黑色 */
-        --text-secondary: #333333; /* 次要文本色，加深 */
-        --text-tertiary: #555555; /* 第三级文本色，加深 */
-        --text-light: #777777; /* 浅色文本，加深 */
-        --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-        --shadow-sm: 0 2px 8px rgba(255, 36, 66, 0.1);
-        --shadow-md: 0 4px 12px rgba(255, 36, 66, 0.15);
-        --shadow-accent: 0 4px 12px rgba(255, 153, 51, 0.25);
-        --radius-sm: 8px;
-        --radius-md: 12px;
-        --radius-lg: 16px;
-        --gradient-main: linear-gradient(135deg, #FF2442 0%, #FF6B81 100%);
-        --gradient-accent: linear-gradient(135deg, #FF9933 0%, #FFCC33 100%);
-        --gradient-dark: linear-gradient(135deg, #E30B29 0%, #FF4E6D 100%);
+        /* Ant Design 配色方案 */
+        --primary-color: #1890ff; /* 蓝色主色调 */
+        --primary-color-hover: #40a9ff; /* 鼠标悬停色 */
+        --primary-color-active: #096dd9; /* 点击色 */
+        --primary-color-outline: rgba(24, 144, 255, 0.2); /* 聚焦色 */
+        --primary-1: #e6f7ff; /* 浅蓝背景 */
+        --primary-2: #bae7ff; /* 较浅蓝色 */
+        --primary-5: #40a9ff; /* 中蓝色 */
+        --primary-7: #096dd9; /* 深蓝色 */
+        
+        --success-color: #52c41a; /* 成功色：绿色 */
+        --warning-color: #faad14; /* 警告色：黄色 */
+        --error-color: #f5222d; /* 错误色：红色 */
+        
+        --heading-color: rgba(0, 0, 0, 0.85); /* 标题色 */
+        --text-color: rgba(0, 0, 0, 0.65); /* 主文本色 */
+        --text-color-secondary: rgba(0, 0, 0, 0.45); /* 次文本色 */
+        --disabled-color: rgba(0, 0, 0, 0.25); /* 失效色 */
+        --border-color-base: #d9d9d9; /* 边框色 */
+        --border-color-split: #f0f0f0; /* 分割线色 */
+        --background-color-base: #f5f5f5; /* 背景色 */
+        --background-color-light: #fafafa; /* 浅背景色 */
+        
+        --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+        --code-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+        
+        --border-radius-base: 2px; /* 基础圆角 */
+        --border-radius-sm: 2px; /* 小圆角 */
+        --border-radius-lg: 4px; /* 大圆角 */
+        
+        --box-shadow-base: 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 9px 28px 8px rgba(0, 0, 0, 0.05); /* 基础阴影 */
+        --box-shadow-sm: 0 1px 2px -2px rgba(0, 0, 0, 0.16), 0 3px 6px 0 rgba(0, 0, 0, 0.12), 0 5px 12px 4px rgba(0, 0, 0, 0.09); /* 小阴影 */
+        
+        --user-bg: var(--background-color-light); /* 用户消息背景 */
+        --ai-bg: var(--primary-1); /* AI消息背景 */
       }
       
       @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
+        from { opacity: 0; transform: translateY(8px); }
         to { opacity: 1; transform: translateY(0); }
-      }
-      
-      @keyframes pulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.05); }
-        100% { transform: scale(1); }
       }
       
       html, body {
@@ -474,228 +430,88 @@ function generatePageHTML(chatData, messages, pageNumber, totalPages) {
         padding: 0;
         width: 100%;
         height: 100%;
-        overflow: hidden;
+        font-family: var(--font-family);
+        background-color: var(--background-color-light);
+        color: var(--text-color);
+        line-height: 1.5715;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        font-size: 14px;
       }
       
       body {
-        font-family: var(--font-sans);
-        background-color: #FFF;
-        color: var(--text-primary);
-        line-height: 1.6;
-        /* 固定3:4长宽比，无右侧空白 */
-        width: 100%;
-        height: 133.33vw; /* 保持3:4比例 */
-        max-width: 750px;
-        max-height: 1000px;
+        max-width: 800px;
         margin: 0 auto;
         position: relative;
-        overflow: hidden;
-        -webkit-font-smoothing: antialiased; /* 提高字体清晰度 */
-        -moz-osx-font-smoothing: grayscale; /* 提高字体清晰度 */
       }
       
-      /* 容器样式 - 小红书风格 */
-      .xiaohongshu-page {
+      /* 容器样式 - Ant Design 风格 */
+      .chat-page {
         width: 100%;
-        height: 100%;
-        position: relative;
-        background: #FFFFFF;
+        min-height: 100%;
         display: flex;
         flex-direction: column;
-        overflow: hidden;
-        background-image: 
-          radial-gradient(circle at 5% 95%, rgba(255, 36, 66, 0.05) 0%, transparent 30%),
-          radial-gradient(circle at 95% 5%, rgba(255, 153, 51, 0.05) 0%, transparent 30%);
+        background: white;
+        box-shadow: var(--box-shadow-base);
       }
       
-      /* 头部样式 - 小红书风格提升 */
+      /* 头部样式 - Ant Design 风格 */
       .header {
-        padding: 16px;
-        background: linear-gradient(180deg, #FFFFFF 0%, #FAFAFA 100%);
-        border-bottom: 1px solid #F0F0F0;
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        box-shadow: 0 2px 15px rgba(0, 0, 0, 0.03);
-      }
-      
-      /* 头部背景装饰 */
-      .header::before {
-        content: "";
-        position: absolute;
+        padding: 16px 24px;
+        background: white;
+        border-bottom: 1px solid var(--border-color-split);
+        position: sticky;
         top: 0;
-        right: 0;
-        width: 100px;
-        height: 100px;
-        background-image: var(--gradient-main);
-        opacity: 0.08;
-        border-radius: 0 0 0 100px;
-        z-index: 0;
+        z-index: 10;
       }
       
       .header-top {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 10px;
-        position: relative;
-        z-index: 1;
+        margin-bottom: 8px;
       }
       
       .header-title {
-        font-size: 20px;
-        font-weight: 700;
-        color: var(--text-primary);
-        margin-right: 8px;
-        flex: 1;
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--heading-color);
+        margin: 0;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        text-shadow: 0 1px 2px rgba(0,0,0,0.05);
-      }
-      
-      .page-indicator {
-        font-size: 14px;
-        color: #fff;
-        background: var(--gradient-dark);
-        padding: 4px 12px;
-        border-radius: 12px;
-        font-weight: 600;
-        box-shadow: var(--shadow-sm);
-        letter-spacing: 0.5px;
       }
       
       .header-meta {
         display: flex;
         align-items: center;
         gap: 8px;
-        font-size: 13px;
-        color: var(--text-tertiary);
-        position: relative;
-        z-index: 1;
-        font-weight: 500; /* 稍微加粗 */
-      }
-      
-      .header-avatar {
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        background: var(--gradient-main);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
         font-size: 14px;
-        font-weight: bold;
-        margin-right: 6px;
-        box-shadow: var(--shadow-sm);
+        color: var(--text-color-secondary);
       }
       
       /* 聊天容器 */
       .chat-container {
         flex: 1;
-        padding: 16px;
+        padding: 24px;
         overflow-y: auto;
-        animation: fadeIn 0.5s ease-out forwards;
-        background: linear-gradient(180deg, #FFFFFF 0%, #FCFCFC 100%);
+        background: white;
       }
       
-      /* 消息样式 - 更吸引眼球的小红书风格 */
+      /* 消息样式 - Ant Design 风格 */
       .message {
         margin-bottom: 24px;
-        border-radius: var(--radius-md);
-        overflow: hidden;
-        background: #FFFFFF;
-        border: 1px solid rgba(240, 240, 240, 0.8);
-        box-shadow: var(--shadow-sm);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        animation: fadeIn 0.5s ease-out forwards;
-        animation-delay: calc(0.1s * var(--idx, 0));
-        transform-origin: center left;
-        position: relative;
-      }
-      
-      .message:hover {
-        box-shadow: var(--shadow-md);
-        transform: translateY(-2px) scale(1.01);
-      }
-      
-      /* 消息装饰元素 */
-      .message::after {
-        content: "";
-        position: absolute;
-        bottom: -1px;
-        left: 0;
-        width: 100%;
-        height: 3px;
-        background: var(--gradient-main);
-        opacity: 0.2;
-      }
-      
-      .user.message::after {
-        background: var(--gradient-accent);
-        opacity: 0.3;
+        animation: fadeIn 0.3s ease-out forwards;
+        animation-delay: calc(0.05s * var(--idx, 0));
       }
       
       .message-header {
-        padding: 12px 14px;
-        font-weight: 600;
         display: flex;
         align-items: center;
         gap: 8px;
-        font-size: 14px;
-        position: relative;
-        overflow: hidden;
+        margin-bottom: 8px;
       }
       
-      .message-header::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 100%;
-        background: var(--gradient-main);
-        opacity: 0.1;
-      }
-      
-      .message-content {
-        padding: 16px;
-        font-size: 16px; /* 增大字体 */
-        line-height: 1.6;
-        word-break: break-word;
-        color: var(--text-primary);
-        letter-spacing: 0.3px;
-        font-weight: 500; /* 增加文字粗细 */
-        text-shadow: 0 0 1px rgba(0,0,0,0.05); /* 轻微文字阴影增强可读性 */
-      }
-      
-      /* 用户消息样式 */
-      .user .message-header {
-        color: var(--text-primary);
-        background-color: var(--user-header);
-      }
-      
-      .user .message-content {
-        background-color: var(--user-bg);
-      }
-      
-      .user .message-header::before {
-        background: var(--gradient-accent);
-        opacity: 0.15; /* 增强对比度 */
-      }
-      
-      /* AI消息样式 */
-      .ai .message-header {
-        color: var(--primary-dark);
-        background-color: var(--ai-header);
-      }
-      
-      .ai .message-content {
-        background-color: var(--ai-bg);
-      }
-      
-      /* 头像样式 */
       .avatar {
         width: 32px;
         height: 32px;
@@ -703,305 +519,245 @@ function generatePageHTML(chatData, messages, pageNumber, totalPages) {
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 15px;
-        font-weight: bold;
+        font-size: 14px;
+        font-weight: 500;
         color: white;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
       }
       
       .user .avatar {
-        background: var(--gradient-accent);
+        background-color: var(--warning-color);
       }
       
       .ai .avatar {
-        background: var(--gradient-main);
+        background-color: var(--primary-color);
       }
       
-      /* 代码样式优化 */
+      .message-role {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-color);
+      }
+      
+      .message-bubble {
+        padding: 12px 16px;
+        border-radius: var(--border-radius-lg);
+        font-size: 14px;
+        line-height: 1.5715;
+        max-width: 90%;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      }
+      
+      .user .message-bubble {
+        background-color: var(--user-bg);
+        margin-left: auto;
+        border: 1px solid var(--border-color-split);
+      }
+      
+      .ai .message-bubble {
+        background-color: var(--ai-bg);
+        margin-right: auto;
+        border: 1px solid var(--primary-2);
+      }
+      
+      /* 代码样式 - Ant Design 风格 */
       pre {
-        background-color: #282C34; /* 深色背景，高对比度 */
-        color: #E5E5E5; /* 浅色文本，高对比度 */
+        background-color: #141414;
+        color: #fff;
         padding: 16px;
-        border-radius: var(--radius-sm);
+        border-radius: var(--border-radius-base);
         overflow-x: auto;
-        margin: 14px 0;
+        margin: 16px 0;
+        font-family: var(--code-family);
         font-size: 13px;
-        border: none;
         position: relative;
-        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
-        border-left: 3px solid var(--primary-color);
       }
       
       pre::before {
-        content: "代码";
+        content: attr(data-language);
         position: absolute;
-        top: -8px;
-        right: 10px;
-        background: var(--gradient-accent);
+        top: 0;
+        right: 0;
+        font-size: 12px;
+        padding: 2px 8px;
+        background: var(--primary-7);
         color: white;
-        font-size: 10px;
-        padding: 2px 10px;
-        border-radius: 10px;
-        font-weight: bold;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        border-radius: 0 var(--border-radius-base) 0 var(--border-radius-base);
+        font-weight: 500;
       }
       
       code {
-        font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-        font-size: 14px; /* 增大代码字体 */
-        background-color: rgba(255, 36, 66, 0.1); /* 增强背景对比度 */
-        padding: 2px 6px;
-        border-radius: 4px;
-        color: var(--primary-dark);
-        font-weight: 600; /* 加粗代码 */
+        font-family: var(--code-family);
+        font-size: 13px;
+        background-color: rgba(150, 150, 150, 0.1);
+        padding: 2px 4px;
+        border-radius: var(--border-radius-sm);
+        color: var(--primary-color);
+        border: 1px solid rgba(100, 100, 100, 0.2);
       }
       
-      /* 其他元素样式优化 */
+      /* 其他元素样式 - Ant Design 风格 */
       p {
-        margin-bottom: 12px;
+        margin-bottom: 16px;
       }
       
-      /* 引用块 */
       blockquote {
-        border-left: 3px solid var(--accent-color);
-        padding: 10px 16px;
-        background-color: var(--accent-light);
-        margin: 14px 0;
-        border-radius: 0 8px 8px 0;
-        font-style: italic;
-        color: var(--accent-dark);
-        font-weight: 500;
-        position: relative;
-      }
-      
-      blockquote::before {
-        content: """;
-        position: absolute;
-        left: 8px;
-        top: 0;
-        font-size: 40px;
-        color: var(--accent-color);
-        opacity: 0.2;
-        font-family: serif;
-        line-height: 1;
+        border-left: 4px solid var(--primary-color);
+        padding: 8px 16px;
+        background-color: var(--background-color-light);
+        margin: 16px 0;
+        color: var(--text-color-secondary);
       }
       
       img {
         max-width: 100%;
         height: auto;
-        border-radius: var(--radius-sm);
-        margin: 14px 0;
-        box-shadow: var(--shadow-sm);
+        border-radius: var(--border-radius-base);
+        margin: 16px 0;
+        border: 1px solid var(--border-color-split);
       }
       
       ul, ol {
         padding-left: 24px;
-        margin: 14px 0;
-        color: var(--text-primary);
+        margin: 16px 0;
       }
       
       li {
         margin-bottom: 8px;
-        position: relative;
       }
       
-      /* 强化的思考内容样式 */
+      /* 思考内容样式 - Ant Design 风格 */
       .thinking-content {
+        margin-top: 16px;
+        padding: 16px;
+        background-color: var(--background-color-light);
+        border-radius: var(--border-radius-base);
+        font-size: 14px;
+        color: var(--text-color-secondary);
+        border: 1px solid var(--border-color-split);
         position: relative;
-        font-size: 15px; /* 增大字体 */
-        color: var(--text-secondary);
-        background-color: #FFFAF5;
-        padding: 18px;
-        border-radius: 12px;
-        margin-top: 14px;
-        border-left: 4px solid var(--accent-color);
-        box-shadow: var(--shadow-accent);
-        font-weight: 500; /* 增加字重 */
       }
       
-      .thinking-content::before {
-        content: "思考过程";
+      .thinking-label {
         position: absolute;
         top: -10px;
-        left: 14px;
-        background: var(--gradient-accent);
+        left: 16px;
+        background: var(--primary-color);
         color: white;
         font-size: 12px;
-        padding: 4px 12px;
-        border-radius: 12px;
-        font-weight: bold;
-        box-shadow: var(--shadow-sm);
-        letter-spacing: 0.5px;
+        padding: 0 8px;
+        height: 20px;
+        line-height: 20px;
+        border-radius: 10px;
+        font-weight: 500;
       }
       
-      /* 页脚样式增强 */
+      /* 页脚样式 - Ant Design 风格 */
       .footer {
-        padding: 16px;
+        padding: 16px 24px;
         text-align: center;
-        font-size: 13px;
-        color: var(--text-tertiary);
-        border-top: 1px solid #F2F2F2;
-        background-color: #FCFCFC;
-        position: relative;
+        font-size: 14px;
+        color: var(--text-color-secondary);
+        border-top: 1px solid var(--border-color-split);
+        background-color: white;
       }
       
-      /* 页脚装饰 */
-      .footer::before {
-        content: "";
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 4px;
-        background: var(--gradient-main);
-        opacity: 0.3;
-      }
-      
-      .xiaohongshu-tag {
+      .chat-tag {
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        background: linear-gradient(to right, #FFF0F0, #FFF6F6);
-        color: var(--primary-dark);
-        padding: 6px 14px;
-        border-radius: 18px;
+        background: var(--primary-1);
+        color: var(--primary-color);
+        padding: 4px 12px;
+        border-radius: 16px;
         font-size: 13px;
-        font-weight: 600;
+        font-weight: 500;
         margin-top: 12px;
-        box-shadow: var(--shadow-sm);
-        border: 1px solid rgba(255, 36, 66, 0.12);
-        position: relative;
-        z-index: 1;
+        border: 1px solid var(--primary-2);
       }
       
-      .xiaohongshu-tag:hover {
-        animation: pulse 1s infinite ease-in-out;
-      }
-      
-      /* 小红书图标增强 */
-      .xiaohongshu-icon {
-        width: 20px;
-        height: 20px;
-        background: var(--gradient-main);
+      .tag-icon {
+        width: 16px;
+        height: 16px;
+        background: var(--primary-color);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         color: white;
-        font-size: 12px;
+        font-size: 10px;
         font-weight: bold;
-        box-shadow: 0 2px 4px rgba(255, 36, 66, 0.3);
       }
       
-      /* 互动元素 - 点赞、收藏、分享计数 */
-      .interaction-stats {
+      /* 分页样式 - Ant Design 风格 */
+      .pagination {
         display: flex;
-        justify-content: space-between;
-        padding: 10px 16px;
-        margin-top: 10px;
-        border-top: 1px dashed rgba(0, 0, 0, 0.06);
-        font-size: 13px;
-        color: var(--text-tertiary);
-        font-weight: 500;
-      }
-      
-      .stat-item {
-        display: flex;
+        justify-content: center;
         align-items: center;
-        gap: 5px;
-        transition: transform 0.3s ease, color 0.3s ease;
+        gap: 8px;
+        margin-top: 16px;
+        margin-bottom: 8px;
       }
       
-      .stat-item:hover {
-        transform: scale(1.05);
-        color: var(--primary-dark);
-      }
-      
-      /* 装饰元素 - 小红书风格标签 */
-      .decorative-tag {
-        position: absolute;
-        top: 14px;
-        right: 14px;
-        background: var(--gradient-dark);
-        color: white;
-        font-size: 11px;
-        padding: 3px 10px;
-        border-radius: 6px;
-        transform: rotate(3deg);
-        box-shadow: var(--shadow-sm);
-        z-index: 5;
-        letter-spacing: 0.5px;
-      }
-      
-      /* 强调文本 */
-      strong {
-        color: var(--text-primary);
-        font-weight: 700; /* 更粗 */
-      }
-      
-      /* 文本链接 */
-      a {
-        transition: all 0.2s ease;
-        color: var(--primary-dark) !important; /* 强制使用深色 */
-        font-weight: 600 !important; /* 强制加粗 */
-        text-decoration: none !important;
-        border-bottom: 1.5px dotted var(--primary-color) !important; /* 更明显的下划线 */
-      }
-      
-      a:hover {
-        opacity: 0.9;
+      .page-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 32px;
+        padding: 0 15px;
+        font-size: 14px;
+        border-radius: var(--border-radius-base);
+        border: 1px solid var(--border-color-base);
+        background: white;
+        color: var(--text-color);
+        cursor: pointer;
+        transition: all 0.3s;
         text-decoration: none;
       }
-
-      /* 深色环境适配 */
-      @media (prefers-color-scheme: dark) {
-        :root {
-          --text-primary: #000000; /* 深色模式下用纯黑色确保最大对比度 */
-          --text-secondary: #222222;
-          --text-tertiary: #444444;
-          --text-light: #666666;
-        }
+      
+      .page-button:hover {
+        color: var(--primary-color);
+        border-color: var(--primary-color);
       }
       
-      /* 高对比度印刷适配 */
-      @media print {
-        body {
-          color: black !important;
-          background: white !important;
+      .page-info {
+        font-size: 14px;
+        color: var(--text-color-secondary);
+      }
+      
+      /* 响应式设计 */
+      @media (max-width: 640px) {
+        .message-bubble {
+          max-width: 85%;
         }
         
-        .message-content {
-          color: black !important;
-          font-weight: 600 !important;
+        .chat-container {
+          padding: 16px;
         }
         
-        a, strong, code {
-          color: black !important;
-          font-weight: 700 !important;
+        .header {
+          padding: 12px 16px;
         }
       }
     </style>
   </head>
   <body>
-    <div class="xiaohongshu-page">
-      <div class="decorative-tag">置顶精选</div>
+    <div class="chat-page">
       <div class="header">
         <div class="header-top">
           <h1 class="header-title">${chatData.title || '智能对话记录'}</h1>
-          <div class="page-indicator">${pageNumber}/${totalPages}</div>
         </div>
         <div class="header-meta">
-          <div class="header-avatar">AI</div>
           <span>${chatData.service || '智能对话助手'}</span>
-          <span>·</span>
-          <span>${new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' })}</span>
+          <span>•</span>
+          <span>${new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+          ${totalPages > 1 ? `<span>•</span><span>第 ${pageNumber}/${totalPages} 页</span>` : ''}
         </div>
       </div>
       
       <div class="chat-container">
   `;
   
-  // 添加当前页面的消息
+  // 添加所有消息
   messages.forEach((msg, idx) => {
     const roleClass = msg.role.toLowerCase() === 'user' ? 'user' : 'ai';
     const roleName = msg.role.toLowerCase() === 'user' ? '我' : 'AI';
@@ -1032,44 +788,10 @@ function generatePageHTML(chatData, messages, pageNumber, totalPages) {
       formattedContent = formattedContent.replace(placeholder, enhancedSvg);
     });
     
-    // 添加自定义样式到生成的 HTML 元素
-    // 为代码块添加样式
+    // 为代码块添加语言标签
     formattedContent = formattedContent.replace(/<pre><code( class="language-([^"]+)")?>([^<]+)<\/code><\/pre>/g, (match, langClass, lang, code) => {
-      return `<pre style="background-color:#282C34;color:#E5E5E5;padding:16px;border-radius:8px;margin:14px 0;font-size:14px;border-left:3px solid var(--primary-color);position:relative;"><code style="font-family:monospace;color:#E5E5E5;">${code.trim()}</code><div style="position:absolute;top:-8px;right:10px;background:var(--gradient-accent);color:white;font-size:10px;padding:2px 10px;border-radius:10px;font-weight:bold;box-shadow:0 2px 4px rgba(0,0,0,0.1);">${lang || '代码'}</div></pre>`;
+      return `<pre data-language="${lang || '代码'}">${code.trim()}</pre>`;
     });
-    
-    // 为行内代码添加样式
-    formattedContent = formattedContent.replace(/<code>([^<]+)<\/code>/g, '<code style="font-family:monospace;font-size:14px;background-color:rgba(255,36,66,0.1);padding:2px 6px;border-radius:4px;color:#E30B29;font-weight:600;">$1</code>');
-    
-    // 为标题添加样式
-    formattedContent = formattedContent.replace(/<h3>([^<]+)<\/h3>/g, '<strong style="display:block;margin-top:14px;margin-bottom:8px;font-size:16px;color:var(--text-primary);border-left:3px solid var(--primary-color);padding-left:8px;font-weight:700;">$1</strong>');
-    formattedContent = formattedContent.replace(/<h2>([^<]+)<\/h2>/g, '<strong style="display:block;margin-top:16px;margin-bottom:10px;font-size:17px;color:var(--text-primary);border-left:3px solid var(--primary-color);padding-left:8px;font-weight:700;">$1</strong>');
-    formattedContent = formattedContent.replace(/<h1>([^<]+)<\/h1>/g, '<strong style="display:block;margin-top:18px;margin-bottom:12px;font-size:18px;color:var(--text-primary);border-left:3px solid var(--primary-color);padding-left:8px;font-weight:700;">$1</strong>');
-    
-    // 为粗体添加样式
-    formattedContent = formattedContent.replace(/<strong>([^<]+)<\/strong>/g, '<strong style="font-weight:700;color:#000;">$1</strong>');
-    
-    // 为斜体添加样式
-    formattedContent = formattedContent.replace(/<em>([^<]+)<\/em>/g, '<em style="color:var(--accent-dark);font-weight:500;">$1</em>');
-    
-    // 为链接添加样式
-    formattedContent = formattedContent.replace(/<a href="([^"]+)">([^<]+)<\/a>/g, '<a href="$1" style="color:var(--primary-dark);text-decoration:none;border-bottom:1.5px dotted var(--primary-color);font-weight:600;">$2</a>');
-    
-    // 为引用添加样式
-    formattedContent = formattedContent.replace(/<blockquote>([^<]+)<\/blockquote>/g, '<blockquote style="background-color:#FFF4E0;color:#333;border-left:3px solid var(--accent-color);padding:10px 16px;font-weight:500;">$1</blockquote>');
-    
-    // 为无序列表添加样式
-    formattedContent = formattedContent.replace(/<ul>(([\s\S])*?)<\/ul>/g, '<ul style="padding-left:24px;margin:14px 0;color:#111;">$1</ul>');
-    formattedContent = formattedContent.replace(/<li>([^<]+)<\/li>/g, '<li style="margin-bottom:8px;color:#111;">$1</li>');
-    
-    // 为有序列表添加样式
-    formattedContent = formattedContent.replace(/<ol>(([\s\S])*?)<\/ol>/g, '<ol style="padding-left:24px;margin:14px 0;color:#111;">$1</ol>');
-    
-    // 为 SVG 容器添加样式
-    formattedContent = formattedContent.replace(/<div class="svg-container">([\s\S]*?)<\/div>/g, '<div class="svg-container" style="margin:16px 0;text-align:center;">$1</div>');
-    
-    // 为 SVG 嵌入添加样式
-    formattedContent = formattedContent.replace(/<svg class="svg-embed"/g, '<svg class="svg-embed" style="max-width:100%;height:auto;"');
     
     // 处理思考内容（如果存在）
     let thinkingContentHtml = '';
@@ -1098,56 +820,45 @@ function generatePageHTML(chatData, messages, pageNumber, totalPages) {
         formattedThinking = formattedThinking.replace(placeholder, enhancedSvg);
       });
       
-      // 添加自定义样式到生成的 HTML 元素
-      // 为代码块添加样式
-      formattedThinking = formattedThinking.replace(/<pre><code( class="language-([^"]+)")?>([^<]+)<\/code><\/pre>/g, (match, langClass, lang, code) => {
-        return `<pre style="background-color:#282C34;color:#E5E5E5;padding:16px;border-radius:8px;margin:14px 0;font-size:14px;border-left:3px solid var(--primary-color);"><code style="font-family:monospace;color:#E5E5E5;">${code.trim()}</code></pre>`;
-      });
-      
-      // 为行内代码添加样式
-      formattedThinking = formattedThinking.replace(/<code>([^<]+)<\/code>/g, '<code style="font-family:monospace;font-size:14px;background-color:rgba(255,36,66,0.1);padding:2px 6px;border-radius:4px;color:#E30B29;font-weight:600;">$1</code>');
-      
-      // 为粗体添加样式
-      formattedThinking = formattedThinking.replace(/<strong>([^<]+)<\/strong>/g, '<strong style="font-weight:700;color:#000;">$1</strong>');
-      
-      // 为斜体添加样式
-      formattedThinking = formattedThinking.replace(/<em>([^<]+)<\/em>/g, '<em style="color:var(--accent-dark);font-weight:500;">$1</em>');
-      
-      // 为 SVG 容器添加样式
-      formattedThinking = formattedThinking.replace(/<div class="svg-container">([\s\S]*?)<\/div>/g, '<div class="svg-container" style="margin:16px 0;text-align:center;">$1</div>');
-      
-      // 为 SVG 嵌入添加样式
-      formattedThinking = formattedThinking.replace(/<svg class="svg-embed"/g, '<svg class="svg-embed" style="max-width:100%;height:auto;"');
-      
-      thinkingContentHtml = `<div class="thinking-content">${formattedThinking}</div>`;
+      thinkingContentHtml = `
+        <div class="thinking-content">
+          <div class="thinking-label">思考过程</div>
+          ${formattedThinking}
+        </div>
+      `;
     }
     
     html += `
     <div class="message ${roleClass}" style="--idx:${idx}">
       <div class="message-header">
         <div class="avatar">${avatarText}</div>
-        <div>${roleName}</div>
+        <div class="message-role">${roleName}</div>
       </div>
-      <div class="message-content">${formattedContent}</div>
+      <div class="message-bubble">${formattedContent}</div>
       ${thinkingContentHtml}
-      ${roleClass === 'ai' ? `
-      <div class="interaction-stats">
-        <div class="stat-item">❤️ ${Math.floor(Math.random() * 900) + 100}</div>
-        <div class="stat-item">💬 ${Math.floor(Math.random() * 50) + 5}</div>
-        <div class="stat-item">🔖 ${Math.floor(Math.random() * 200) + 50}</div>
-      </div>` : ''}
     </div>
     `;
   });
+  
+  // 添加分页控制（如果有多页）
+  if (totalPages > 1) {
+    html += `
+      <div class="pagination">
+        ${pageNumber > 1 ? `<a href="chat_page_${pageNumber-1}.html" class="page-button">上一页</a>` : ''}
+        <span class="page-info">第 ${pageNumber}/${totalPages} 页</span>
+        ${pageNumber < totalPages ? `<a href="chat_page_${pageNumber+1}.html" class="page-button">下一页</a>` : ''}
+      </div>
+    `;
+  }
   
   html += `
       </div>
       
       <div class="footer">
-        <div>${pageNumber === totalPages ? '对话记录完整展示' : '查看下一张继续阅读'}</div>
-        <div class="xiaohongshu-tag">
-          <div class="xiaohongshu-icon">红</div>
-          <span>AI智能生成 · ${Math.floor(Math.random() * 5000) + 1000}人已浏览</span>
+        <div>对话记录完整展示</div>
+        <div class="chat-tag">
+          <div class="tag-icon">AI</div>
+          <span>AI智能生成 • ${new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
         </div>
       </div>
     </div>

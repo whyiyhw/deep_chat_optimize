@@ -3,7 +3,8 @@
  */
 
 import { extractChatData, extractAllChatsData } from './data-extractors.js';
-import { showNotification, showLoadingIndicator, updateLoadingIndicator, hideLoadingIndicator } from './export-ui.js';
+import { showLoadingIndicator, updateLoadingIndicator, hideLoadingIndicator } from './export-ui.js';
+import { showNotification } from '../utils/notificationUtils.js';
 import { createImagePreviewModal } from './image-renderer.js';
 
 /**
@@ -17,7 +18,7 @@ export function exportChat(chatService) {
   extractChatData(chatService).then(chatData => {
     if (!chatData || !chatData.messages || chatData.messages.length === 0) {
       console.error('未能提取到聊天数据');
-      alert('未能提取到聊天数据');
+      showNotification('未能提取到聊天数据', 'error', 5000);
       return;
     }
     
@@ -37,8 +38,8 @@ export function exportChat(chatService) {
             if (exportResponse && exportResponse.success) {
               console.log('导出成功:', exportResponse.data);
             } else {
-              console.error('导出失败:', exportResponse?.error || '未知错误');
-              alert(`导出失败: ${exportResponse?.error || '未知错误'}`);
+              console.error('导出失败:', exportResponse?.error);
+              showNotification(`导出失败: ${exportResponse?.error || '未知错误'}`, 'error', 5000);
             }
           }
         );
@@ -46,7 +47,7 @@ export function exportChat(chatService) {
     });
   }).catch(error => {
     console.error('提取聊天数据时出错:', error);
-    alert('提取聊天数据时出错: ' + error.message);
+    showNotification('提取聊天数据时出错: ' + error.message, 'error', 5000);
   });
 }
 
@@ -61,7 +62,7 @@ export function exportAllChats(chatService) {
   extractAllChatsData(chatService).then(allChatsData => {
     if (!allChatsData || !Array.isArray(allChatsData) || allChatsData.length === 0) {
       console.error('未能提取到聊天数据');
-      alert('未能提取到聊天数据');
+      showNotification('未能提取到聊天数据', 'error', 5000);
       return;
     }
     
@@ -81,8 +82,8 @@ export function exportAllChats(chatService) {
             if (exportResponse && exportResponse.success) {
               console.log('导出成功:', exportResponse.data);
             } else {
-              console.error('导出失败:', exportResponse?.error || '未知错误');
-              alert(`导出失败: ${exportResponse?.error || '未知错误'}`);
+              console.error('导出失败:', exportResponse?.error);
+              showNotification(`导出失败: ${exportResponse?.error || '未知错误'}`, 'error', 5000);
             }
           }
         );
@@ -90,7 +91,7 @@ export function exportAllChats(chatService) {
     });
   }).catch(error => {
     console.error('提取所有聊天数据时出错:', error);
-    alert('提取所有聊天数据时出错: ' + error.message);
+    showNotification('提取所有聊天数据时出错: ' + error.message, 'error', 5000);
   });
 }
 
@@ -119,14 +120,7 @@ export function renderChatAsImage(chatService) {
         console.error('未能提取到聊天数据');
         
         // 使用更友好的错误提示
-        const errorOptions = {
-          title: '无法提取聊天数据',
-          message: '未能从当前对话中提取到有效的聊天数据，请确保当前页面包含聊天内容。',
-          type: 'error',
-          duration: 5000
-        };
-        
-        showNotification(errorOptions);
+        showNotification('无法提取聊天数据：未能从当前对话中提取到有效的聊天数据，请确保当前页面包含聊天内容。', 'error', 5000);
         return;
       }
       
@@ -151,28 +145,14 @@ export function renderChatAsImage(chatService) {
             createImagePreviewModal(response.htmlPages, chatData.service);
             
             // 显示成功通知
-            const successOptions = {
-              title: '预览已就绪',
-              message: `聊天记录已成功渲染为${response.htmlPages.length}张图片，您可以下载或复制到剪贴板。`,
-              type: 'success',
-              duration: 3000
-            };
-            
-            showNotification(successOptions);
+            showNotification(`聊天记录已成功渲染为${response.htmlPages.length}张图片，您可以下载或复制到剪贴板。`, 'success', 3000);
           } else {
             // 隐藏加载指示器
             hideLoadingIndicator(loadingIndicator);
             console.error('渲染失败:', response?.error || '未知错误');
             
             // 使用更友好的错误提示
-            const errorOptions = {
-              title: '渲染失败',
-              message: `无法渲染聊天记录: ${response?.error || '未知错误'}`,
-              type: 'error',
-              duration: 5000
-            };
-            
-            showNotification(errorOptions);
+            showNotification(`渲染失败：无法渲染聊天记录: ${response?.error || '未知错误'}`, 'error', 5000);
           }
         }
       );
@@ -183,13 +163,6 @@ export function renderChatAsImage(chatService) {
       console.error('提取聊天数据时出错:', error);
       
       // 使用更友好的错误提示
-      const errorOptions = {
-        title: '处理出错',
-        message: `提取聊天数据时出错: ${error.message}`,
-        type: 'error',
-        duration: 5000
-      };
-      
-      showNotification(errorOptions);
+      showNotification(`处理出错：提取聊天数据时出错: ${error.message}`, 'error', 5000);
     });
 } 

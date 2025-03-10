@@ -2,6 +2,10 @@
  * 通知和对话框工具函数
  */
 
+// 通知计数器和容器
+let notificationCounter = 0;
+let notificationsContainer = null;
+
 /**
  * 显示美观的通知提示
  * @param {String} message - 提示消息
@@ -9,24 +13,32 @@
  * @param {Number} duration - 显示时长(毫秒)
  */
 export function showNotification(message, type = 'success', duration = 3000) {
-  // 检查是否已存在通知元素
-  let notification = document.getElementById('dco-notification');
-  if (notification) {
-    // 如果存在，先移除
-    notification.remove();
+  // 初始化通知容器（如果不存在）
+  if (!notificationsContainer) {
+    notificationsContainer = document.createElement('div');
+    notificationsContainer.id = 'dco-notifications-container';
+    notificationsContainer.style.position = 'fixed';
+    notificationsContainer.style.top = '20px';
+    notificationsContainer.style.left = '50%';
+    notificationsContainer.style.transform = 'translateX(-50%)';
+    notificationsContainer.style.zIndex = '10000';
+    notificationsContainer.style.display = 'flex';
+    notificationsContainer.style.flexDirection = 'column';
+    notificationsContainer.style.gap = '10px';
+    notificationsContainer.style.pointerEvents = 'none'; // 容器本身不接收鼠标事件
+    document.body.appendChild(notificationsContainer);
   }
   
+  // 生成唯一ID
+  const notificationId = `dco-notification-${++notificationCounter}`;
+  
   // 创建通知元素
-  notification = document.createElement('div');
-  notification.id = 'dco-notification';
-  notification.style.position = 'fixed';
-  notification.style.top = '20px';
-  notification.style.left = '50%';
-  notification.style.transform = 'translateX(-50%) translateY(-20px)';
+  const notification = document.createElement('div');
+  notification.id = notificationId;
+  notification.style.position = 'relative';
   notification.style.padding = '12px 18px';
   notification.style.borderRadius = '10px';
   notification.style.boxShadow = '0 8px 16px rgba(0, 0, 0, 0.12)';
-  notification.style.zIndex = '10000';
   notification.style.display = 'flex';
   notification.style.alignItems = 'center';
   notification.style.gap = '10px';
@@ -39,6 +51,7 @@ export function showNotification(message, type = 'success', duration = 3000) {
   notification.style.minWidth = '280px';
   notification.style.maxWidth = '400px';
   notification.style.border = '1px solid';
+  notification.style.pointerEvents = 'auto'; // 通知元素可以接收鼠标事件
   
   // 根据类型设置样式
   if (type === 'success') {
@@ -135,7 +148,7 @@ export function showNotification(message, type = 'success', duration = 3000) {
   });
   
   closeButton.addEventListener('click', () => {
-    hideNotification();
+    hideNotification(notificationId);
   });
   
   // 添加到通知元素
@@ -143,29 +156,36 @@ export function showNotification(message, type = 'success', duration = 3000) {
   notification.appendChild(content);
   notification.appendChild(closeButton);
   
-  // 添加到页面
-  document.body.appendChild(notification);
+  // 添加到通知容器
+  notificationsContainer.appendChild(notification);
   
   // 显示通知
   setTimeout(() => {
     notification.style.opacity = '1';
-    notification.style.transform = 'translateX(-50%) translateY(0)';
   }, 10);
   
   // 隐藏通知的函数
-  function hideNotification() {
-    notification.style.opacity = '0';
-    notification.style.transform = 'translateX(-50%) translateY(-20px)';
-    setTimeout(() => {
-      if (notification.parentNode) {
-        notification.remove();
-      }
-    }, 300);
+  function hideNotification(id) {
+    const notificationToHide = document.getElementById(id);
+    if (notificationToHide) {
+      notificationToHide.style.opacity = '0';
+      setTimeout(() => {
+        if (notificationToHide.parentNode) {
+          notificationToHide.remove();
+          
+          // 如果容器中没有通知了，移除容器
+          if (notificationsContainer && notificationsContainer.children.length === 0) {
+            notificationsContainer.remove();
+            notificationsContainer = null;
+          }
+        }
+      }, 300);
+    }
   }
   
   // 设置自动消失
   let timeoutId = setTimeout(() => {
-    hideNotification();
+    hideNotification(notificationId);
   }, duration);
   
   // 鼠标悬停时暂停倒计时
@@ -176,9 +196,12 @@ export function showNotification(message, type = 'success', duration = 3000) {
   // 鼠标离开时恢复倒计时
   notification.addEventListener('mouseleave', () => {
     timeoutId = setTimeout(() => {
-      hideNotification();
+      hideNotification(notificationId);
     }, duration);
   });
+  
+  // 返回通知ID，以便外部可以手动关闭
+  return notificationId;
 }
 
 /**

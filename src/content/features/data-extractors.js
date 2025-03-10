@@ -2,10 +2,12 @@
  * 数据提取模块 - 从各种聊天服务提取数据
  */
 
+import { showNotification } from '../utils/notificationUtils.js';
+
 /**
  * 从特定的聊天服务提取聊天数据
  * @param {String} chatService - 聊天服务名称
- * @returns {Promise<Object>} - 提取的聊天数据
+ * @returns {Promise<Object>} - 提取的聊天数据对象
  */
 export async function extractChatData(chatService) {
     let messages = [];
@@ -36,7 +38,9 @@ export async function extractChatData(chatService) {
 
             case 'yuanbao':
                 // 提取腾讯元宝的聊天数据
-                messages = extractYuanbaoData();
+                const yuanbaoResult = extractYuanbaoData();
+                messages = yuanbaoResult.extractedMessages;
+                title = yuanbaoResult.title;
                 break;
 
             default:
@@ -81,9 +85,11 @@ export async function extractAllChatsData(chatService) {
                 return await extractAllDeepSeekData();
 
             case 'yuanbao':
-                // 提取腾讯元宝的所有聊天数据
-                return await extractAllYuanbaoData();
-
+                // 不支持提取腾讯元宝的所有聊天数据
+                console.error('腾讯元宝不支持提取所有聊天数据');
+                // 显示通知，告知用户只支持导出当前聊天
+                showNotification('腾讯元宝目前仅支持导出当前聊天，不支持批量导出所有聊天记录', 'warning', 5000);
+                return [];
             default:
                 console.error(`不支持的聊天服务: ${chatService}`);
                 return [];
@@ -308,70 +314,105 @@ async function extractDeepSeekData() {
 
 /**
  * 提取腾讯元宝的聊天数据
- * @returns {Array} - 消息数组
+ * @returns {Object} - 包含 extractedMessages 和 title 的对象
  */
 function extractYuanbaoData() {
     const messages = [];
+    let title = '未定义';
     console.log('正在提取腾讯元宝聊天数据...');
 
     try {
+        // 尝试获取对话标题
+        const titleElement = document.querySelector('.agent-dialogue__content--common__header__name__title .t-button__text');
+        if (titleElement) {
+            title = titleElement.textContent.trim();
+        }
+
         // 尝试找到聊天消息容器
-        const chatContainer = document.querySelector('.chat-container') ||
-            document.querySelector('.conversation-container') ||
-            document.querySelector('main');
+        const chatContainer = document.querySelector('.agent-chat__list') ||
+            document.querySelector('.agent-chat__list__content');
 
         if (!chatContainer) {
             console.error('未找到腾讯元宝聊天容器');
-            return messages;
+            return { extractedMessages: messages, title };
         }
 
         // 查找所有消息元素
-        const messageElements = chatContainer.querySelectorAll('div[class*="message"]') ||
-            chatContainer.querySelectorAll('div[class*="chat-message"]');
+        const messageElements = chatContainer.querySelectorAll('.agent-chat__list__item');
 
         console.log(`找到 ${messageElements.length} 条消息`);
 
-        messageElements.forEach((element, index) => {
-            // 尝试确定消息角色
+        messageElements.forEach((element) => {
+            // 确定消息角色
             let role = 'unknown';
-
-            // 通过类名或内容判断角色
-            if (element.classList.contains('user') ||
-                element.classList.contains('user-message') ||
-                element.innerHTML.includes('user-avatar') ||
-                element.querySelector('img[alt*="user"]')) {
+            
+            if (element.classList.contains('agent-chat__list__item--human')) {
                 role = 'user';
-            } else if (element.classList.contains('assistant') ||
-                element.classList.contains('bot-message') ||
-                element.innerHTML.includes('bot-avatar') ||
-                element.querySelector('img[alt*="assistant"]') ||
-                element.querySelector('img[alt*="bot"]')) {
+            } else if (element.classList.contains('agent-chat__list__item--ai')) {
                 role = 'assistant';
-            } else {
-                // 如果无法通过类名判断，尝试通过顺序判断
-                role = index % 2 === 0 ? 'user' : 'assistant';
+            }
+
+            // 跳过无法识别角色的消息
+            if (role === 'unknown') {
+                return;
             }
 
             // 提取消息内容
-            const contentElement = element.querySelector('div[class*="content"]') ||
-                element.querySelector('div[class*="message-content"]') ||
-                element;
+            let contentElement;
+            let content = '';
+            let thinking_content = '';
+            
+            if (role === 'user') {
+                contentElement = element.querySelector('.hyc-content-text');
+                if (contentElement) {
+                    content = contentElement.textContent;
+                }
+            } else if (role === 'assistant') {
+                // 尝试获取思考过程内容
+                const reasonerThinkContent = element.querySelector('.hyc-component-reasoner__think-content');
+                const reasonerTextContent = element.querySelector('.hyc-component-reasoner__text');
+                
+                // 保存思考过程内容
+                if (reasonerThinkContent) {
+                    thinking_content = reasonerThinkContent.textContent.trim();
+                }
+                
+                // 优先使用最终回复内容，如果没有则使用思考过程
+                if (reasonerTextContent) {
+                    content = reasonerTextContent.textContent;
+                } else if (reasonerThinkContent) {
+                    content = reasonerThinkContent.textContent;
+                } else {
+                    // 尝试其他可能的内容选择器
+                    contentElement = element.querySelector('.hyc-common-markdown-style') || 
+                                    element.querySelector('.agent-chat__bubble__content');
+                    if (contentElement) {
+                        content = contentElement.textContent;
+                    }
+                }
+            }
 
-            if (contentElement) {
-                const content = contentElement.innerHTML;
-
-                messages.push({
+            // 只有当内容不为空时才添加消息
+            if (content.trim()) {
+                const messageObj = {
                     role: role,
-                    content: content
-                });
+                    content: content.trim()
+                };
+                
+                // 只有助手角色且有思考内容时才添加 thinking_content
+                if (role === 'assistant' && thinking_content) {
+                    messageObj.thinking_content = thinking_content;
+                }
+                
+                messages.push(messageObj);
             }
         });
 
         console.log(`成功提取 ${messages.length} 条消息`);
-        return messages;
+        return { extractedMessages: messages, title };
     } catch (error) {
         console.error('提取腾讯元宝聊天数据时出错:', error);
-        return messages;
+        return { extractedMessages: messages, title };
     }
 }
 
@@ -504,18 +545,3 @@ async function extractAllGeminiData() {
     return [currentChat];
 }
 
-/**
- * 提取腾讯元宝的所有聊天数据
- * @returns {Promise<Array>} - 所有聊天数据的数组
- */
-async function extractAllYuanbaoData() {
-    // 由于腾讯元宝的聊天记录不容易批量获取，这里只返回当前聊天
-    const currentChat = {
-        id: 'current-chat',
-        title: '当前聊天',
-        timestamp: new Date().toISOString(),
-        messages: extractYuanbaoData()
-    };
-
-    return [currentChat];
-} 

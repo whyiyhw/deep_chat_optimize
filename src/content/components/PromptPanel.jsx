@@ -209,6 +209,7 @@ const ListContainer = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(100%, 1fr));
   gap: 16px;
+  box-sizing: border-box;
 
   /* 自定义滚动条 */
   &::-webkit-scrollbar {
@@ -284,6 +285,8 @@ const PromptCard = styled.div`
   display: flex;
   flex-direction: column;
   position: relative;
+  width: 100%;
+  box-sizing: border-box;
 
   ${props => props.isEditing && css`
     box-shadow: 0 4px 12px rgba(66, 133, 244, 0.15);
@@ -357,10 +360,29 @@ const IconButton = styled.button`
 
 const CardContent = styled.div`
   padding: ${props => props.isExpanded ? '16px' : '0 16px'};
-  max-height: ${props => props.isExpanded ? '300px' : '0'};
-  overflow: hidden;
+  max-height: ${props => props.isExpanded ? '600px' : '0'};
+  overflow-y: ${props => props.isExpanded ? 'auto' : 'hidden'};
+  overflow-x: hidden;
   transition: all 0.3s ease;
   opacity: ${props => props.isExpanded ? 1 : 0};
+  box-sizing: border-box;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  
+  /* 自定义滚动条 */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+  }
 `;
 
 const PromptText = styled.div`
@@ -425,8 +447,14 @@ const ActionButton = styled.button`
 `;
 
 const EditForm = styled.div`
-  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
   animation: ${slideInRight} 0.3s ease-out;
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  position: relative;
 `;
 
 const EditInput = styled.input`
@@ -438,6 +466,7 @@ const EditInput = styled.input`
   font-size: 14px;
   outline: none;
   transition: all 0.2s;
+  box-sizing: border-box;
 
   &:focus {
     border-color: #4285f4;
@@ -457,6 +486,8 @@ const EditTextarea = styled.textarea`
   outline: none;
   transition: all 0.2s;
   line-height: 1.6;
+  box-sizing: border-box;
+  max-width: 100%;
 
   &:focus {
     border-color: #4285f4;
@@ -581,8 +612,10 @@ const PromptPanel = ({ chatService, onClose }) => {
   
   // 选择模板
   const selectTemplate = (template) => {
+    // 如果当前正在编辑，不做任何操作
+    if (editingId !== null) return;
+    
     setSelectedTemplate(template.id === selectedTemplate ? null : template.id);
-    setEditingId(null); // 关闭任何编辑状态
   };
   
   // 开始编辑模板
@@ -795,9 +828,10 @@ const PromptPanel = ({ chatService, onClose }) => {
               <PromptCard 
                 key={template.id} 
                 isEditing={editingId === template.id}
-                onClick={() => selectTemplate(template)}
+                onClick={editingId === template.id ? (e) => e.stopPropagation() : () => selectTemplate(template)}
                 onMouseEnter={() => setHoveredTemplate(template.id)}
                 onMouseLeave={() => setHoveredTemplate(null)}
+                data-template-id={template.id}
               >
                 <CardHeader isExpanded={selectedTemplate === template.id}>
                   <CardTitle isEditing={editingId === template.id}>
@@ -840,59 +874,79 @@ const PromptPanel = ({ chatService, onClose }) => {
                 
                 <CardContent isExpanded={selectedTemplate === template.id || editingId === template.id}>
                   {editingId === template.id ? (
-                    <EditForm onClick={(e) => e.stopPropagation()}>
+                    <div style={{ width: '100%' }} onClick={(e) => e.stopPropagation()}>
                       <EditInput
                         type="text"
                         placeholder={t.templateNamePlaceholder}
                         value={editTitle}
                         onChange={(e) => setEditTitle(e.target.value)}
                         autoFocus
+                        onClick={(e) => e.stopPropagation()}
                       />
                       <EditTextarea
                         placeholder={t.contentPlaceholder}
                         value={editContent}
                         onChange={(e) => setEditContent(e.target.value)}
+                        style={{ maxHeight: '200px', minHeight: '140px' }}
+                        onClick={(e) => e.stopPropagation()}
                       />
-                      <ActionButtonsContainer>
-                        <ActionButton 
-                          secondary 
-                          onClick={(e) => cancelEditing(e)}
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        gap: '8px',
+                        marginTop: '16px'
+                      }}>
+                        <button
+                          style={{
+                            padding: '8px 16px',
+                            borderRadius: '6px',
+                            fontSize: '13px',
+                            fontWeight: 500,
+                            cursor: 'pointer',
+                            backgroundColor: 'transparent',
+                            color: '#666',
+                            border: '1px solid rgba(0, 0, 0, 0.1)'
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            cancelEditing(e);
+                          }}
+                          type="button"
                         >
                           {t.cancelButton}
-                        </ActionButton>
-                        <ActionButton 
-                          primary 
-                          onClick={(e) => saveTemplate(false, template.id, e)}
+                        </button>
+                        <button
+                          style={{
+                            padding: '8px 16px',
+                            borderRadius: '6px',
+                            fontSize: '13px',
+                            fontWeight: 500,
+                            cursor: 'pointer',
+                            backgroundColor: '#4285f4',
+                            color: 'white',
+                            border: '1px solid #3367d6'
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            saveTemplate(false, template.id, e);
+                          }}
+                          type="button"
                         >
                           {t.saveButton}
-                        </ActionButton>
-                      </ActionButtonsContainer>
-                    </EditForm>
+                        </button>
+                      </div>
+                    </div>
                   ) : (
                     <>
                       <PromptText>{template.content}</PromptText>
                       <UpdatedTime>
                         {t.updatedAt} {formatDate(template.updatedAt)}
                       </UpdatedTime>
-                      <ActionButtonsContainer>
-                        <ActionButton 
-                          secondary 
-                          onClick={(e) => startEditing(template, e)}
-                        >
-                          {t.editButton}
-                        </ActionButton>
-                        <ActionButton 
-                          danger 
-                          onClick={(e) => deleteTemplate(template.id, e)}
-                        >
-                          {t.deleteButton}
-                        </ActionButton>
-                      </ActionButtonsContainer>
                     </>
                   )}
                 </CardContent>
                 
-                {hoveredTemplate === template.id && !selectedTemplate && !editingId && (
+                {hoveredTemplate === template.id && selectedTemplate !== template.id && editingId !== template.id && (
                   <CardPreview isVisible={true}>
                     {template.content}
                   </CardPreview>
@@ -901,47 +955,75 @@ const PromptPanel = ({ chatService, onClose }) => {
             ))}
             
             {isAdding && (
-              <PromptCard isEditing={true}>
+              <PromptCard isEditing={true} onClick={(e) => e.stopPropagation()}>
                 <CardHeader>
                   <CardTitle isEditing={true}>
                     {editTitle || t.addButton}
                   </CardTitle>
                 </CardHeader>
                 <CardContent isExpanded={true}>
-                  <EditForm onClick={(e) => e.stopPropagation()}>
+                  <div style={{ width: '100%' }} onClick={(e) => e.stopPropagation()}>
                     <EditInput
                       type="text"
                       placeholder={t.templateNamePlaceholder}
                       value={editTitle}
                       onChange={(e) => setEditTitle(e.target.value)}
                       autoFocus
+                      onClick={(e) => e.stopPropagation()}
                     />
                     <EditTextarea
                       placeholder={t.contentPlaceholder}
                       value={editContent}
                       onChange={(e) => setEditContent(e.target.value)}
+                      style={{ maxHeight: '200px', minHeight: '140px' }}
+                      onClick={(e) => e.stopPropagation()}
                     />
-                    <ActionButtonsContainer>
-                      <ActionButton 
-                        secondary 
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'flex-end',
+                      gap: '8px',
+                      marginTop: '16px'
+                    }}>
+                      <button
+                        style={{
+                          padding: '8px 16px',
+                          borderRadius: '6px',
+                          fontSize: '13px',
+                          fontWeight: 500,
+                          cursor: 'pointer',
+                          backgroundColor: 'transparent',
+                          color: '#666',
+                          border: '1px solid rgba(0, 0, 0, 0.1)'
+                        }}
                         onClick={(e) => {
                           e.stopPropagation();
                           cancelAdding();
                         }}
+                        type="button"
                       >
                         {t.cancelButton}
-                      </ActionButton>
-                      <ActionButton 
-                        primary 
+                      </button>
+                      <button
+                        style={{
+                          padding: '8px 16px',
+                          borderRadius: '6px',
+                          fontSize: '13px',
+                          fontWeight: 500,
+                          cursor: 'pointer',
+                          backgroundColor: '#4285f4',
+                          color: 'white',
+                          border: '1px solid #3367d6'
+                        }}
                         onClick={(e) => {
                           e.stopPropagation();
                           saveTemplate(true);
                         }}
+                        type="button"
                       >
                         {t.saveButton}
-                      </ActionButton>
-                    </ActionButtonsContainer>
-                  </EditForm>
+                      </button>
+                    </div>
+                  </div>
                 </CardContent>
               </PromptCard>
             )}

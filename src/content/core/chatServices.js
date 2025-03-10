@@ -292,18 +292,18 @@ export function setupDeepSeekButtonObserver() {
     }
     
     // 导入并调用添加按钮的函数
-    import('../features/promptFeature.js').then(module => {
-      // 确保提示词面板已创建
-      module.createPromptPanel();
-      
-      // 添加按钮
-      module.addPromptButtonToInput('deepseek');
+    Promise.all([
+      import('../features/promptFeature.js'),
+      import('../features/prompt/promptButton.js')
+    ]).then(([promptFeature, promptButton]) => {
+      // 直接使用promptButton模块中的函数
+      promptButton.addPromptButtonToInput('deepseek');
       
       // 更新添加时间和状态
       lastAddTime = Date.now();
       isAddingButton = false;
     }).catch(err => {
-      console.error('导入promptFeature模块失败:', err);
+      console.error('导入模块失败:', err);
       isAddingButton = false;
     });
   };

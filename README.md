@@ -4,8 +4,8 @@
 - [x] 对于浏览器上的 ai chat 的 界面优化，加入额外功能，
 - [x] 对于浏览器上的 chat 数据可以进行 导出 方便用户 进行 本地化的存储 或者进行分享到社交平台。
 - [x] 支持通过GitHub Actions自动构建和发布扩展包
+- [x] 支持 svg 的 图像渲染跟导出
 
-![预览图](./doc/example1.png)
 ![预览图](./doc/example2.png)
 ![预览图](./doc/example7.png)
 
@@ -51,6 +51,11 @@
 
 
 > 开发相关内容已移至 [开发指南](./doc/develop.md)
+
+## 关于我
+<div align="center">
+  <img src="./doc/image99.png" alt="联系">
+</div>
 
 ## 许可证
 

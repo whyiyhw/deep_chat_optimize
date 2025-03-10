@@ -1,0 +1,54 @@
+name: Build and Release Extension
+
+on:
+  push:
+    tags:
+      - 'v*' # 当推送带有v前缀的标签时触发，例如v1.0.0
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22.14.0'
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: '9.12.3'
+          
+      - name: Install dependencies
+        run: pnpm install
+        
+      - name: Build extension
+        run: pnpm build
+        
+      - name: Create zip file
+        run: |
+          cd dist
+          zip -r ../deep-chat-optimize-${{ github.ref_name }}.zip *
+          cd ..
+          
+      - name: Get release info
+        id: get_release_info
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "release_name=Deep Chat Optimize ${VERSION}" >> $GITHUB_OUTPUT
+          
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: ${{ steps.get_release_info.outputs.release_name }}
+          tag_name: ${{ github.ref }}
+          draft: false
+          prerelease: false
+          files: deep-chat-optimize-${{ github.ref_name }}.zip
+          generate_release_notes: true 

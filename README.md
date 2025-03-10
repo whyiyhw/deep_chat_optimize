@@ -3,6 +3,7 @@
 - 已实现功能
 - [x] 对于浏览器上的 ai chat 的 界面优化，加入额外功能，
 - [x] 对于浏览器上的 chat 数据可以进行 导出 方便用户 进行 本地化的存储 或者进行分享到社交平台。
+- [x] 支持通过GitHub Actions自动构建和发布扩展包
 
 ![预览图](./doc/example1.png)
 ![预览图](./doc/example2.png)
@@ -78,6 +79,9 @@ deep_chat_optimize/
 │   ├── utils/                  # 通用工具函数
 │   ├── contexts/               # 全局上下文
 │   └── hooks/                  # 自定义React Hooks
+├── .github/                    # GitHub相关配置
+│   └── workflows/              # GitHub Actions工作流
+│       └── release.yml         # 自动构建和发布工作流
 ├── .gitignore                  # Git忽略文件
 ├── vite.config.js              # Vite配置文件
 ├── package.json                # 项目依赖配置
@@ -179,6 +183,30 @@ pnpm run preview
 4. 开启"开发者模式"
 5. 点击"加载已解压的扩展程序"
 6. 选择项目的 `dist` 目录
+
+### 自动构建和发布
+
+项目使用GitHub Actions自动构建和发布扩展包。当推送带有版本标签（如`v1.0.0`）的提交时，会自动触发构建流程：
+
+1. 检出代码
+2. 设置Node.js和pnpm环境
+3. 安装依赖
+4. 构建扩展
+5. 将dist目录打包为zip文件
+6. 创建GitHub Release并上传zip文件
+
+#### 如何发布新版本
+
+1. 更新`package.json`中的版本号
+2. 提交更改并推送到GitHub
+3. 创建新的版本标签并推送
+   ```bash
+   git tag v1.0.0
+   git push origin v1.0.0
+   ```
+4. GitHub Actions将自动构建并发布扩展包
+5. 在GitHub Releases页面下载生成的zip文件
+6. 将zip文件上传到Chrome Web Store或其他浏览器扩展商店
 
 ### 多语言支持
 

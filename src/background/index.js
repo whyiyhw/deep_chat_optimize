@@ -3,6 +3,129 @@
  * 处理消息通信、数据存储和全局状态管理
  */
 
+// 导入 markdown-it 和插件
+import MarkdownIt from 'markdown-it';
+import markdownItHtml5Embed from 'markdown-it-html5-embed';
+import markdownItContainer from 'markdown-it-container';
+import markdownItAttrs from 'markdown-it-attrs';
+
+// 初始化 markdown-it 实例，配置选项
+const md = new MarkdownIt({
+  html: true,        // 启用 HTML 标签
+  breaks: true,      // 将换行符转换为 <br>
+  linkify: true,     // 自动将 URL 转换为链接
+  typographer: true, // 启用一些语言中性的替换和引号美化
+  xhtmlOut: false    // 不使用 XHTML 闭合标签，避免破坏 SVG
+});
+
+// 使用插件
+md.use(markdownItHtml5Embed, {
+  html5embed: {
+    useImageSyntax: true,    // 使用图像语法嵌入媒体
+    attributes: {            // 默认属性
+      audio: 'controls preload="metadata"',
+      video: 'controls preload="metadata"',
+      svg: 'class="svg-embed"'
+    }
+  }
+});
+
+// 添加自定义容器支持
+md.use(markdownItContainer, 'svg', {
+  validate: function(params) {
+    return params.trim().match(/^svg\s*(.*)$/);
+  },
+  render: function (tokens, idx) {
+    if (tokens[idx].nesting === 1) {
+      // 开始标签
+      return '<div class="svg-container">';
+    } else {
+      // 结束标签
+      return '</div>';
+    }
+  }
+});
+
+// 添加属性支持，扩展允许的属性列表以支持更多 SVG 属性
+md.use(markdownItAttrs, {
+  // 允许的属性 - 扩展以支持更多 SVG 相关属性
+  allowedAttributes: [
+    // 基本属性
+    'id', 'class', 'style', 'title', 'lang', 'dir',
+    // SVG 特有属性
+    'width', 'height', 'viewBox', 'xmlns', 'version', 'preserveAspectRatio',
+    // 图形属性
+    'fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'stroke-dasharray',
+    'stroke-dashoffset', 'stroke-opacity', 'fill-opacity', 'opacity', 'transform',
+    // 动画属性
+    'animation', 'animation-name', 'animation-duration', 'animation-timing-function',
+    'animation-delay', 'animation-iteration-count', 'animation-direction', 'animation-fill-mode',
+    'animation-play-state',
+    // 其他常用属性
+    'x', 'y', 'cx', 'cy', 'r', 'rx', 'ry', 'd', 'points', 'x1', 'y1', 'x2', 'y2',
+    'font-family', 'font-size', 'font-weight', 'text-anchor', 'dominant-baseline',
+    'clip-path', 'mask', 'filter'
+  ]
+});
+
+// 创建一个函数来处理复杂的 SVG 内容
+function processSvgContent(content) {
+  // 检查是否是 SVG 内容
+  if (!content.includes('<svg') && !content.includes('</svg>')) {
+    return null; // 不是 SVG 内容
+  }
+  
+  try {
+    // 提取完整的 SVG 标签及其内容
+    const svgMatch = content.match(/<svg[\s\S]*?<\/svg>/);
+    if (svgMatch) {
+      return svgMatch[0]; // 返回完整的 SVG 内容
+    }
+  } catch (error) {
+    console.error('处理 SVG 内容时出错:', error);
+  }
+  
+  // 如果无法提取或处理，则返回原始内容
+  return content;
+}
+
+// 自定义 markdown-it 的渲染规则，确保 SVG 内容被正确处理
+const defaultRender = md.renderer.rules.html_block || function(tokens, idx, options, env, self) {
+  return self.renderToken(tokens, idx, options);
+};
+
+// 重写 html_block 规则，保留 SVG 内容
+md.renderer.rules.html_block = function(tokens, idx, options, env, self) {
+  const content = tokens[idx].content;
+  
+  // 处理 SVG 内容
+  const svgContent = processSvgContent(content);
+  if (svgContent) {
+    return svgContent; // 返回处理后的 SVG 内容
+  }
+  
+  // 对于非 SVG 内容，使用默认渲染器
+  return defaultRender(tokens, idx, options, env, self);
+};
+
+// 同样处理内联 HTML
+const defaultInlineRender = md.renderer.rules.html_inline || function(tokens, idx, options, env, self) {
+  return self.renderToken(tokens, idx, options);
+};
+
+md.renderer.rules.html_inline = function(tokens, idx, options, env, self) {
+  const content = tokens[idx].content;
+  
+  // 处理 SVG 内容
+  const svgContent = processSvgContent(content);
+  if (svgContent) {
+    return svgContent; // 返回处理后的 SVG 内容
+  }
+  
+  // 对于非 SVG 内容，使用默认渲染器
+  return defaultInlineRender(tokens, idx, options, env, self);
+};
+
 // 监听扩展安装或更新事件
 chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
@@ -887,56 +1010,114 @@ function generatePageHTML(chatData, messages, pageNumber, totalPages) {
     // 处理内容，确保代码块和其他格式正确显示
     let formattedContent = msg.content || '';
     
-    // 更强大的Markdown转HTML处理
-    // 处理代码块 (简化以适应小红书格式)
-    formattedContent = formattedContent.replace(/```(.*?)\n([\s\S]*?)```/g, (match, language, code) => {
-      return `<pre style="background-color:#282C34;color:#E5E5E5;padding:16px;border-radius:8px;margin:14px 0;font-size:14px;border-left:3px solid var(--primary-color);position:relative;"><code style="font-family:monospace;color:#E5E5E5;">${code.trim()}</code><div style="position:absolute;top:-8px;right:10px;background:var(--gradient-accent);color:white;font-size:10px;padding:2px 10px;border-radius:10px;font-weight:bold;box-shadow:0 2px 4px rgba(0,0,0,0.1);">${language || '代码'}</div></pre>`;
+    // 保存 SVG 内容，避免被后续处理破坏
+    const svgPlaceholders = [];
+    let svgIndex = 0;
+    
+    // 提取并保存所有 SVG 内容
+    formattedContent = formattedContent.replace(/<svg[\s\S]*?<\/svg>/g, (match) => {
+      const placeholder = `__SVG_PLACEHOLDER_${svgIndex}__`;
+      svgPlaceholders.push({ placeholder, content: match });
+      svgIndex++;
+      return placeholder;
     });
     
-    // 处理行内代码
-    formattedContent = formattedContent.replace(/`([^`]+)`/g, '<code style="font-family:monospace;font-size:14px;background-color:rgba(255,36,66,0.1);padding:2px 6px;border-radius:4px;color:#E30B29;font-weight:600;">$1</code>');
+    // 使用 markdown-it 将 Markdown 转换为 HTML
+    formattedContent = md.render(formattedContent);
     
-    // 处理标题
-    formattedContent = formattedContent.replace(/^### (.*?)$/gm, '<strong style="display:block;margin-top:14px;margin-bottom:8px;font-size:16px;color:var(--text-primary);border-left:3px solid var(--primary-color);padding-left:8px;font-weight:700;">$1</strong>');
-    formattedContent = formattedContent.replace(/^## (.*?)$/gm, '<strong style="display:block;margin-top:16px;margin-bottom:10px;font-size:17px;color:var(--text-primary);border-left:3px solid var(--primary-color);padding-left:8px;font-weight:700;">$1</strong>');
-    formattedContent = formattedContent.replace(/^# (.*?)$/gm, '<strong style="display:block;margin-top:18px;margin-bottom:12px;font-size:18px;color:var(--text-primary);border-left:3px solid var(--primary-color);padding-left:8px;font-weight:700;">$1</strong>');
+    // 恢复 SVG 内容
+    svgPlaceholders.forEach(({ placeholder, content }) => {
+      // 为 SVG 添加响应式样式
+      const enhancedSvg = content.replace(/<svg/, '<svg style="max-width:100%;height:auto;display:block;margin:16px auto;"');
+      formattedContent = formattedContent.replace(placeholder, enhancedSvg);
+    });
     
-    // 处理粗体
-    formattedContent = formattedContent.replace(/\*\*(.*?)\*\*/g, '<strong style="font-weight:700;color:#000;">$1</strong>');
+    // 添加自定义样式到生成的 HTML 元素
+    // 为代码块添加样式
+    formattedContent = formattedContent.replace(/<pre><code( class="language-([^"]+)")?>([^<]+)<\/code><\/pre>/g, (match, langClass, lang, code) => {
+      return `<pre style="background-color:#282C34;color:#E5E5E5;padding:16px;border-radius:8px;margin:14px 0;font-size:14px;border-left:3px solid var(--primary-color);position:relative;"><code style="font-family:monospace;color:#E5E5E5;">${code.trim()}</code><div style="position:absolute;top:-8px;right:10px;background:var(--gradient-accent);color:white;font-size:10px;padding:2px 10px;border-radius:10px;font-weight:bold;box-shadow:0 2px 4px rgba(0,0,0,0.1);">${lang || '代码'}</div></pre>`;
+    });
     
-    // 处理斜体
-    formattedContent = formattedContent.replace(/\*(.*?)\*/g, '<em style="color:var(--accent-dark);font-weight:500;">$1</em>');
+    // 为行内代码添加样式
+    formattedContent = formattedContent.replace(/<code>([^<]+)<\/code>/g, '<code style="font-family:monospace;font-size:14px;background-color:rgba(255,36,66,0.1);padding:2px 6px;border-radius:4px;color:#E30B29;font-weight:600;">$1</code>');
     
-    // 处理链接
-    formattedContent = formattedContent.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" style="color:var(--primary-dark);text-decoration:none;border-bottom:1.5px dotted var(--primary-color);font-weight:600;">$1</a>');
+    // 为标题添加样式
+    formattedContent = formattedContent.replace(/<h3>([^<]+)<\/h3>/g, '<strong style="display:block;margin-top:14px;margin-bottom:8px;font-size:16px;color:var(--text-primary);border-left:3px solid var(--primary-color);padding-left:8px;font-weight:700;">$1</strong>');
+    formattedContent = formattedContent.replace(/<h2>([^<]+)<\/h2>/g, '<strong style="display:block;margin-top:16px;margin-bottom:10px;font-size:17px;color:var(--text-primary);border-left:3px solid var(--primary-color);padding-left:8px;font-weight:700;">$1</strong>');
+    formattedContent = formattedContent.replace(/<h1>([^<]+)<\/h1>/g, '<strong style="display:block;margin-top:18px;margin-bottom:12px;font-size:18px;color:var(--text-primary);border-left:3px solid var(--primary-color);padding-left:8px;font-weight:700;">$1</strong>');
     
-    // 处理引用
-    formattedContent = formattedContent.replace(/^> (.*?)$/gm, '<blockquote style="background-color:#FFF4E0;color:#333;border-left:3px solid var(--accent-color);padding:10px 16px;font-weight:500;">$1</blockquote>');
+    // 为粗体添加样式
+    formattedContent = formattedContent.replace(/<strong>([^<]+)<\/strong>/g, '<strong style="font-weight:700;color:#000;">$1</strong>');
     
-    // 处理无序列表
-    formattedContent = formattedContent.replace(/^- (.*?)$/gm, '<li style="margin-bottom:8px;color:#111;">$1</li>');
-    formattedContent = formattedContent.replace(/(<li.*?<\/li>\n)+/g, '<ul style="padding-left:24px;margin:14px 0;color:#111;">$&</ul>');
+    // 为斜体添加样式
+    formattedContent = formattedContent.replace(/<em>([^<]+)<\/em>/g, '<em style="color:var(--accent-dark);font-weight:500;">$1</em>');
     
-    // 处理有序列表
-    formattedContent = formattedContent.replace(/^\d+\. (.*?)$/gm, '<li style="margin-bottom:8px;color:#111;">$1</li>');
-    formattedContent = formattedContent.replace(/(<li.*?<\/li>\n)+/g, '<ol style="padding-left:24px;margin:14px 0;color:#111;">$&</ol>');
+    // 为链接添加样式
+    formattedContent = formattedContent.replace(/<a href="([^"]+)">([^<]+)<\/a>/g, '<a href="$1" style="color:var(--primary-dark);text-decoration:none;border-bottom:1.5px dotted var(--primary-color);font-weight:600;">$2</a>');
     
-    // 处理换行
-    formattedContent = formattedContent.replace(/\n/g, '<br>');
+    // 为引用添加样式
+    formattedContent = formattedContent.replace(/<blockquote>([^<]+)<\/blockquote>/g, '<blockquote style="background-color:#FFF4E0;color:#333;border-left:3px solid var(--accent-color);padding:10px 16px;font-weight:500;">$1</blockquote>');
+    
+    // 为无序列表添加样式
+    formattedContent = formattedContent.replace(/<ul>(([\s\S])*?)<\/ul>/g, '<ul style="padding-left:24px;margin:14px 0;color:#111;">$1</ul>');
+    formattedContent = formattedContent.replace(/<li>([^<]+)<\/li>/g, '<li style="margin-bottom:8px;color:#111;">$1</li>');
+    
+    // 为有序列表添加样式
+    formattedContent = formattedContent.replace(/<ol>(([\s\S])*?)<\/ol>/g, '<ol style="padding-left:24px;margin:14px 0;color:#111;">$1</ol>');
+    
+    // 为 SVG 容器添加样式
+    formattedContent = formattedContent.replace(/<div class="svg-container">([\s\S]*?)<\/div>/g, '<div class="svg-container" style="margin:16px 0;text-align:center;">$1</div>');
+    
+    // 为 SVG 嵌入添加样式
+    formattedContent = formattedContent.replace(/<svg class="svg-embed"/g, '<svg class="svg-embed" style="max-width:100%;height:auto;"');
     
     // 处理思考内容（如果存在）
     let thinkingContentHtml = '';
     if (msg.thinking_content) {
       let formattedThinking = msg.thinking_content;
-      // 应用相同的格式处理到思考内容
-      formattedThinking = formattedThinking.replace(/```(.*?)\n([\s\S]*?)```/g, (match, language, code) => {
+      
+      // 保存 SVG 内容，避免被后续处理破坏
+      const thinkingSvgPlaceholders = [];
+      let thinkingSvgIndex = 0;
+      
+      // 提取并保存所有 SVG 内容
+      formattedThinking = formattedThinking.replace(/<svg[\s\S]*?<\/svg>/g, (match) => {
+        const placeholder = `__THINKING_SVG_PLACEHOLDER_${thinkingSvgIndex}__`;
+        thinkingSvgPlaceholders.push({ placeholder, content: match });
+        thinkingSvgIndex++;
+        return placeholder;
+      });
+      
+      // 使用 markdown-it 处理思考内容
+      formattedThinking = md.render(formattedThinking);
+      
+      // 恢复 SVG 内容
+      thinkingSvgPlaceholders.forEach(({ placeholder, content }) => {
+        // 为 SVG 添加响应式样式
+        const enhancedSvg = content.replace(/<svg/, '<svg style="max-width:100%;height:auto;display:block;margin:16px auto;"');
+        formattedThinking = formattedThinking.replace(placeholder, enhancedSvg);
+      });
+      
+      // 添加自定义样式到生成的 HTML 元素
+      // 为代码块添加样式
+      formattedThinking = formattedThinking.replace(/<pre><code( class="language-([^"]+)")?>([^<]+)<\/code><\/pre>/g, (match, langClass, lang, code) => {
         return `<pre style="background-color:#282C34;color:#E5E5E5;padding:16px;border-radius:8px;margin:14px 0;font-size:14px;border-left:3px solid var(--primary-color);"><code style="font-family:monospace;color:#E5E5E5;">${code.trim()}</code></pre>`;
       });
       
-      formattedThinking = formattedThinking.replace(/`([^`]+)`/g, '<code style="font-family:monospace;font-size:14px;background-color:rgba(255,36,66,0.1);padding:2px 6px;border-radius:4px;color:#E30B29;font-weight:600;">$1</code>');
-      formattedThinking = formattedThinking.replace(/\*\*(.*?)\*\*/g, '<strong style="font-weight:700;color:#000;">$1</strong>');
-      formattedThinking = formattedThinking.replace(/\*(.*?)\*/g, '<em style="color:var(--accent-dark);font-weight:500;">$1</em>');
-      formattedThinking = formattedThinking.replace(/\n/g, '<br>');
+      // 为行内代码添加样式
+      formattedThinking = formattedThinking.replace(/<code>([^<]+)<\/code>/g, '<code style="font-family:monospace;font-size:14px;background-color:rgba(255,36,66,0.1);padding:2px 6px;border-radius:4px;color:#E30B29;font-weight:600;">$1</code>');
+      
+      // 为粗体添加样式
+      formattedThinking = formattedThinking.replace(/<strong>([^<]+)<\/strong>/g, '<strong style="font-weight:700;color:#000;">$1</strong>');
+      
+      // 为斜体添加样式
+      formattedThinking = formattedThinking.replace(/<em>([^<]+)<\/em>/g, '<em style="color:var(--accent-dark);font-weight:500;">$1</em>');
+      
+      // 为 SVG 容器添加样式
+      formattedThinking = formattedThinking.replace(/<div class="svg-container">([\s\S]*?)<\/div>/g, '<div class="svg-container" style="margin:16px 0;text-align:center;">$1</div>');
+      
+      // 为 SVG 嵌入添加样式
+      formattedThinking = formattedThinking.replace(/<svg class="svg-embed"/g, '<svg class="svg-embed" style="max-width:100%;height:auto;"');
       
       thinkingContentHtml = `<div class="thinking-content">${formattedThinking}</div>`;
     }

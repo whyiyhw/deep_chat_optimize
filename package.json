@@ -22,6 +22,10 @@
   "dependencies": {
     "html2canvas": "^1.4.1",
     "jszip": "^3.10.1",
+    "markdown-it": "^14.1.0",
+    "markdown-it-attrs": "^4.3.1",
+    "markdown-it-container": "^4.0.0",
+    "markdown-it-html5-embed": "^1.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "sharp": "^0.32.6",

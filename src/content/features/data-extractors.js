@@ -465,7 +465,7 @@ async function extractAllDeepSeekData() {
                     const allChats = records.map(record => {
                         let chatData = {
                             id: record.key || (record.chat_session && record.chat_session.id) || '',
-                            title: record.data.title || '未命名聊天',
+                            title: record.chat_session.title || '未命名聊天',
                             timestamp: record.data.timestamp || new Date().toISOString(),
                             messages: []
                         };

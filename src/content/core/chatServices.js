@@ -7,7 +7,25 @@
  * @returns {String} 聊天服务名称或空字符串
  */
 export function detectChatService() {
-  // 尝试通过页面内容检测AI聊天服务
+  // 优先使用URL进行判断
+  const currentHost = window.location.hostname;
+  const currentUrl = window.location.href;
+
+  // 基于URL的精确检测
+  if (currentHost.includes('deepseek.com') || currentUrl.includes('deepseek.com')) {
+    return 'deepseek';
+  } else if (currentHost.includes('claude.ai') || currentUrl.includes('claude.ai')) {
+    return 'claude';
+  } else if (currentHost.includes('chat.openai.com') || currentUrl.includes('chat.openai.com')) {
+    return 'chatgpt';
+  } else if (currentHost.includes('gemini.google.com') || currentUrl.includes('gemini.google.com') ||
+             currentHost.includes('bard.google.com') || currentUrl.includes('bard.google.com')) {
+    return 'gemini';
+  } else if (currentHost.includes('yuanbao.tencent.com') || currentUrl.includes('yuanbao.tencent.com')) {
+    return 'yuanbao';
+  }
+
+  // 如果URL判断不成功，尝试通过页面内容检测
   if (document.title.includes('ChatGPT') || document.body.innerHTML.includes('ChatGPT')) {
     return 'chatgpt';
   } else if (document.title.includes('Claude') || document.body.innerHTML.includes('Claude')) {

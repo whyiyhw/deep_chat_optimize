@@ -23,6 +23,7 @@ function createMountPoint() {
 function initExtension() {
   console.log('Deep Chat Optimize 内容脚本已加载');
   console.log('当前URL:', window.location.href);
+  console.log('当前主机名:', window.location.hostname);
   
   // 检测当前聊天服务
   const chatService = detectChatService();

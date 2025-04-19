@@ -738,13 +738,13 @@ function createYuanbaoPromptButton(searchButton, buttonArea, isChinese) {
     });
 
     // 特别设置按钮的类名
-    promptButton.className = 'style__switch-model--btn___SVFm2 t-button t-button--theme-default t-button--variant-outline';
+    promptButton.className = 'yb-switch-model-btn yb-button-normal--border style__switch-model--btn___SVFm2 t-button t-button--theme-default t-button--variant-outline';
 
     // 设置内联样式
     promptButton.style.fontWeight = '500';
   } else {
     // 如果没有找到搜索按钮，使用默认样式
-    promptButton.className = 'style__switch-model--btn___SVFm2 t-button t-button--theme-default t-button--variant-outline';
+    promptButton.className = 'yb-switch-model-btn yb-button-normal--border style__switch-model--btn___SVFm2 t-button t-button--theme-default t-button--variant-outline';
     promptButton.style.fontWeight = '500';
   }
 
